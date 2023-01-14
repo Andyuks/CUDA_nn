@@ -124,6 +124,12 @@ double *m_elem(double *m, int length, int x, int y){
     return (double*)&m[length * x + y];
 }
 
+
+
+
+
+
+
 /* operations */ 
 
 /* CPU: addition of matrix */
@@ -166,14 +172,14 @@ void matrix_sub(double *c, double *a, double *b, int rows, int cols)
 }
 
 
-
 /* GPU: substraction of matrix  */
 __global__ void cuda_matrix_sum (double *C, double *A, double *B, int rows, int cols)
 {
   int idx = (threadIdx.x + blockIdx.x * blockDim.x); 
   if(idx<(rows*cols)) /*ensure threads not outside dim*/
-    C[idx] = A[idx] + B[idx];
+    C[idx] = A[idx] - B[idx];
 }
+
 
 
 void matrix_mul_cnt(double *m, int rows, int cols, double cnt){
