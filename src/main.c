@@ -4,7 +4,14 @@
 #include "ds.h"
 #include "nn.h"
 #include "utils.h"
+
+#ifdef CPU
 #include "globals.h"
+#endif
+
+#ifdef GPU
+#include "globals.cuh"
+#endif
 
 int main(int argc, char **argv) {
 

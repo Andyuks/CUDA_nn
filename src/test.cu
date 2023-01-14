@@ -1,12 +1,7 @@
 #include "nn.h"
+#include "matrix.cuh"
+#include "test.cuh"
 
-#ifdef CPU
-    #include "matrix.h"
-#endif
-    
-#ifdef GPU
-	#include "matrix.cuh"
-#endif
 
 void cuda_forward_pass_test(nn_t *nn, double *input, double **A){
 

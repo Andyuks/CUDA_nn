@@ -1,16 +1,17 @@
-/* matrix.c */
+/* matrix.cu */
 #include <cuda.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
-#include "matrix.h"
 #include "nn_aux.h"
-#include "globals.h"
 
 #ifdef TIMING
     #include <time.h>
     #include "utils.h"
 #endif
+
+#include "matrix.cuh"
+#include "globals.cuh"
 
 
 
@@ -211,7 +212,7 @@ __global__ void cuda_matrix_mul(double *C, double *A, double *B, int a_rows, int
         __syncthreads();
 
         if(threadIdx.x == 0) {
-            for(i = 0; i < THR_PER_BLOCK; i++)
+            for(i = 0; i < THR_PER_BLOCK; i++) // TODO: mirar si optimizar op cambiando THR_PER_BLOCK
                 sum += c_aux[i];
             atomicAdd(C, sum);
         }
@@ -223,27 +224,16 @@ __global__ void cuda_matrix_mul(double *C, double *A, double *B, int a_rows, int
 #endif
 }
 
+
+
 /* matrix multiplication add */
+
 __global__ void cuda_matrix_mul_add(double *C, double *A, double *B, int a_rows, int a_cols, int b_rows, int b_cols, double *D) {
-    assert(a_cols == b_rows);
-
-    double *c_aux;
-
-    if ((c_aux = (double*)cudaMalloc(a_rows * b_cols * sizeof(double))) == NULL) {
-        return(NULL);
-    }
-
-    matrix_mul(&c_aux, &A, &B, a_rows, a_cols, b_rows, b_cols);
-    matrix_sum(&C, &c_aux, &D, a_rows, b_cols);
-}
-
-/*
-__global__ void cuda_matrix_mul_add(double *C, double *A, double *B, int a_rows, int a_cols, int b_rows, int b_cols, double *D) {
-	assert(a_cols == b_rows);
-    double sum = 0;
+		assert(a_cols == b_rows);
+    double sum = 0.0;
     int i;
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
-    __shared__ double tmp[THR_PER_BLOCK];
+    __shared__ double c_aux[THR_PER_BLOCK];
     
 #ifdef TIMING
     int res_time;
@@ -253,16 +243,14 @@ __global__ void cuda_matrix_mul_add(double *C, double *A, double *B, int a_rows,
 #endif
 
 
-    if (idx < a_rows*b_cols)
-    {
-        tmp[threadIdx.x]=A[idx]*B[idx]; // need index inside block 
+    if (idx < a_rows * b_cols) {
+        c_aux[threadIdx.x] = A[idx] * B[idx]; /* need index inside block */
         __syncthreads();
-        if(threadIdx.x == 0)
-        {
-            for(i=0; i<THR_PER_BLOCK; i++)
-                sum += tmp[i];
 
-			sum +=D[idx];
+        if(threadIdx.x == 0) {
+            for(i = 0; i < THR_PER_BLOCK; i++) // TODO: mirar si optimizar op cambiando THR_PER_BLOCK
+                sum += c_aux[i];
+            sum += D[idx];
             atomicAdd(C, sum);
         }
     }
@@ -271,7 +259,8 @@ __global__ void cuda_matrix_mul_add(double *C, double *A, double *B, int a_rows,
     res_time = clock_gettime(clk_id, &t2);
     printf("Matrix mul execution time: %ld us \n", diff_time(t2, t1));
 #endif
-}*/
+}
+
 
 
 

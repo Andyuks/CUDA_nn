@@ -1,17 +1,16 @@
-/* matrix.c */
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
-#include "matrix.h"
 #include "nn_aux.h"
 #include "globals.h"
+#include "matrix.h"
 
 #ifdef TIMING
     #include <time.h>
     #include "utils.h"
 #endif
 
-/* CPU: alloc matrix 2V*/
+
 double **alloc_matrix_2v(int n_layers, int *size, int *size_prev, double (*init_weight_ptr)(void)){
 
     double **m;
@@ -36,12 +35,8 @@ double **alloc_matrix_2v(int n_layers, int *size, int *size_prev, double (*init_
     return(m);
 }
 
+double **alloc_matrix_1v(int n_layers, int *size, double (*init_weight_ptr)(void)){
 
-
-
-/* CPU: alloc matrix 1V*/
-double **alloc_matrix_1v(int n_layers, int *size, double (*init_weight_ptr)(void))
-{
     double **m;
     int i, j;
 
@@ -64,10 +59,6 @@ double **alloc_matrix_1v(int n_layers, int *size, double (*init_weight_ptr)(void
     return(m);
 }
 
-
-
-
-/* CPU: alloc array */
 double *alloc_array(int length){
 
     double *v;
@@ -84,7 +75,7 @@ double *alloc_array(int length){
     return(v);
 }
 
-/* CPU: alloc matrix */
+
 double *alloc_matrix(int rows, int cols){
 
     double *m;
@@ -102,9 +93,8 @@ double *alloc_matrix(int rows, int cols){
 }
 
 
-/* CPU: matrix free 2D */
-void matrix_free_2D(double **m, int n_layers)
-{
+void matrix_free_2D(double **m, int n_layers){
+
     int i;
 
     for (i=0; i < n_layers; ++i) {
@@ -115,33 +105,19 @@ void matrix_free_2D(double **m, int n_layers)
     free(m);
 }
 
-
-
-
-/* CPU: matrix free */
 void matrix_free(double *m){
 
     if (m != NULL)
         free(m);
 }
 
-
-
 double *m_elem(double *m, int length, int x, int y){
 
     return (double*)&m[length * x + y];
 }
 
+void matrix_sum(double *c, double *a, double *b, int rows, int cols){
 
-
-
-
-
-/* operations */ 
-
-/* CPU: addition of matrix */
-void matrix_sum(double *c, double *a, double *b, int rows, int cols)
-{
     int  col, row;
     double sum;
 
@@ -154,10 +130,8 @@ void matrix_sum(double *c, double *a, double *b, int rows, int cols)
     }
 }
 
+void matrix_sub(double *c, double *a, double *b, int rows, int cols){
 
-/* CPU: substraction of matrix */
-void matrix_sub(double *c, double *a, double *b, int rows, int cols)
-{
     int col, row;
     double sum;
 
@@ -169,10 +143,6 @@ void matrix_sub(double *c, double *a, double *b, int rows, int cols)
     }
 }
 
-
-
-
-/* CPU: mul cnt */
 void matrix_mul_cnt(double *m, int rows, int cols, double cnt){
 
     int col, row;
@@ -184,8 +154,6 @@ void matrix_mul_cnt(double *m, int rows, int cols, double cnt){
     }
 }
 
-
-/* CPU:  zero  */
 void matrix_zero(double *m, int rows, int cols){
 
     int col, row;
@@ -197,11 +165,8 @@ void matrix_zero(double *m, int rows, int cols){
     }
 }
 
+void matrix_mul_dot(double *c, double *a, double *b, int rows, int cols){
 
-
-/* CPU: cuda matrix mul dot*/
-void matrix_mul_dot(double *c, double *a, double *b, int rows, int cols)
-{
     int col, row;
     double prod;
 
@@ -214,10 +179,6 @@ void matrix_mul_dot(double *c, double *a, double *b, int rows, int cols)
     }
 }
 
-
-
-
-/* CPU: matrix transpose */
 double *matrix_transpose(double *m, int rows, int cols){
 
     double *m_t;
@@ -236,10 +197,8 @@ double *matrix_transpose(double *m, int rows, int cols){
     return(m_t);
 }
 
+void matrix_mul(double *c, double *a, double *b, int a_rows, int a_cols, int b_rows, int b_cols){
 
-/* CPU: cuda matrix mul */
-void matrix_mul(double *c, double *a, double *b, int a_rows, int a_cols, int b_rows, int b_cols)
-{
     assert(a_cols == b_rows);
 
     int i, col, row;
@@ -270,10 +229,7 @@ void matrix_mul(double *c, double *a, double *b, int a_rows, int a_cols, int b_r
 
 }
 
-
-/* matrix multiplication add */
-void matrix_mul_add(double *c, double *a, double *b, int a_rows, int a_cols, int b_rows, int b_cols, double *d)
-{
+void matrix_mul_add(double *c, double *a, double *b, int a_rows, int a_cols, int b_rows, int b_cols, double *d){
 
     int i, col, row;
     double sum;
@@ -290,11 +246,10 @@ void matrix_mul_add(double *c, double *a, double *b, int a_rows, int a_cols, int
     }
 }
 
-
-/* CPU: apply fun to matrix */
-void matrix_func(double *n, double *m, int rows, int cols, double (*func)(double))
-{    
+void matrix_func(double *n, double *m, int rows, int cols, double (*func)(double)){
+    
     int col, row;
+
     for (row = 0; row < rows; row++){
         for(col = 0; col < cols; col++){
             *m_elem(n, cols, row, col) = func(*m_elem(m, cols, row, col));
@@ -302,11 +257,8 @@ void matrix_func(double *n, double *m, int rows, int cols, double (*func)(double
     }
 }
 
-
-
-/* print matrix */
-void print_matrix(double *m, int m_rows, int m_cols)
-{
+void print_matrix(double *m, int m_rows, int m_cols){
+    
     int col, row;
     printf("%d %d\n", m_rows, m_cols);
     for (row = 0; row < m_rows; row++){
@@ -317,8 +269,3 @@ void print_matrix(double *m, int m_rows, int m_cols)
     }
     printf("\n");
 }
-
-
-
-
-
