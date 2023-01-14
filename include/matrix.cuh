@@ -1,5 +1,5 @@
-#ifndef __MATRIX_CUH
-#define __MATRIX_CUH
+#ifndef __MATRIXCU_H
+#define __MATRIXCU_H
 
 double **cuda_alloc_matrix_1v(int n_layers, int *size, double (*init_weight_ptr)(void));
 
@@ -13,6 +13,7 @@ void cuda_matrix_free_2D(double **m, int n_layers);
 
 void cuda_matrix_free(double *m);
 
+double *m_elem(double *m, int length, int x, int y);
 
 void cuda_matrix_sum(double *c, double *a, double *b, int rows, int cols);
 
@@ -34,5 +35,6 @@ void cuda_matrix_mul_add(double *c, double *a, double *b, int a_rows, int a_cols
 
 void cuda_matrix_func(double *n, double *m, int m_rows, int m_cols, double (*func)(double));
 
+void print_matrix(double *m, int m_rows, int m_cols);
 
 #endif
