@@ -191,8 +191,7 @@ __global__ double * cuda_matrix_transpose(double * m, int rows, int cols) {
 
 
 /* GPU: cuda matrix mul */
-__global__ void cuda_matrix_mul(double *C, double *A, double *B, int a_rows, int a_cols, int b_rows, int b_cols)
-{
+__global__ void cuda_matrix_mul(double *C, double *A, double *B, int a_rows, int a_cols, int b_rows, int b_cols) {
 	assert(a_cols == b_rows);
     double sum = 0.0;
     int i;
@@ -297,8 +296,4 @@ void print_matrix(double *m, int m_rows, int m_cols)
     }
     printf("\n");
 }
-
-
-
-
 

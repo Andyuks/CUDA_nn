@@ -17,6 +17,14 @@ extern char dataset[100];
 extern char scaling[50];
 extern char model[100];
 
+#endif
+
+
+
+#ifndef __GLOBALS_CUH
+#define __GLOBALS_CUH
+
+#define THR_PER_BLOCK 1024 // cambiar?
 #define gpuErrchk(call)                                 \
   do {                                                        \
     cudaError_t err = call;                                   \

@@ -6,12 +6,21 @@
 #include "nn.h"
 #include "nn_aux.h"
 #include "utils.h"
+#include "train.h"
+
+#ifdef CPU
+#include "globals.h"
 #include "matrix.h"
 #include "test.h"
-#include "train.h"
-#include "globals.h"
+#endif
 
-void init_nn(nn_t *nn, int n_layers, int *layers_size){
+#ifdef GPU
+#include "globals.cuh"
+#include "matrix.cuh"
+#include "test.cuh"
+#endif
+
+void init_nn(nn_t *nn, int n_layers, int *layers_size) {
 
     int i;
 
@@ -107,10 +116,7 @@ void test(nn_t *nn, ds_t *ds){
 
 
 #ifdef GPU
-#include "matrix.cuh"
-#include "test.cuh"
-void train(nn_t *nn, ds_t *ds, int epochs, int size_batch, double lr)
-{
+void train(nn_t *nn, ds_t *ds, int epochs, int size_batch, double lr) {
     int i, n, x, n_batches, min_batch;
     double **A, **Z, **D, **d;;
     int *order;

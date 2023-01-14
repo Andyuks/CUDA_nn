@@ -1,5 +1,8 @@
 #include "nn.h"
-#include "matrix.h"
+
+#ifdef CPU
+    #include "matrix.h"
+#endif
     
 #ifdef GPU
 	#include "matrix.cuh"
