@@ -173,7 +173,7 @@ void matrix_sub(double *c, double *a, double *b, int rows, int cols)
 
 
 /* GPU: substraction of matrix  */
-__global__ void cuda_matrix_sum (double *C, double *A, double *B, int rows, int cols)
+__global__ void cuda_matrix_sub (double *C, double *A, double *B, int rows, int cols)
 {
   int idx = (threadIdx.x + blockIdx.x * blockDim.x); 
   if(idx<(rows*cols)) /*ensure threads not outside dim*/
