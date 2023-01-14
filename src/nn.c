@@ -108,14 +108,15 @@ void test(nn_t *nn, ds_t *ds){
 
 #ifdef GPU
 
-void train(nn_t *nn, ds_t *ds, int epochs, int size_batch, double lr){
-
+void train(nn_t *nn, ds_t *ds, int epochs, int size_batch, double lr)
+{
     int i, n, x, n_batches, min_batch;
     double **A, **Z, **D, **d;;
     int *order;
     double loss;
     struct timespec t1, t2;
     clockid_t clk_id = CLOCK_MONOTONIC;
+	
   
     order = (int*)malloc(ds->n_samples * sizeof(int));
     
@@ -143,7 +144,8 @@ void train(nn_t *nn, ds_t *ds, int epochs, int size_batch, double lr){
             for(min_batch = (x * size_batch); min_batch < ((x + 1) * size_batch); min_batch++){
             
                 i = order[min_batch];
-                cuda_forward_pass(nn, &ds->inputs[i * ds->n_inputs], A, Z); 
+				//cuda_forward_pass<<<blk_in_grid, thr_per_blk>>>(nn, &ds->inputs[i * ds->n_inputs], A, Z);
+                forward_pass(nn, &ds->inputs[i * ds->n_inputs], A, Z); 
                 loss += back_prop(nn, &ds->outputs[i * ds->n_outputs], A, Z, D, d);
             }
             
