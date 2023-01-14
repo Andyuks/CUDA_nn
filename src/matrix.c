@@ -129,13 +129,11 @@ double *m_elem(double *m, int length, int x, int y){
 
 
 
-
 /* operations */ 
 
 /* CPU: addition of matrix */
 void matrix_sum(double *c, double *a, double *b, int rows, int cols)
 {
-
     int  col, row;
     double sum;
 
@@ -151,7 +149,7 @@ void matrix_sum(double *c, double *a, double *b, int rows, int cols)
 /* GPU: addition of matrix */
 __global__ void cuda_matrix_sum (double *C, double *A, double *B, int rows, int cols)
 {
-  int idx = (threadIdx.x + blockIdx.x * blockDim.x); 
+  int idx = threadIdx.x + blockIdx.x * blockDim.x; 
   if(idx<(rows*cols)) /*ensure threads not outside dim*/
     C[idx] = A[idx] + B[idx];
 }
@@ -159,7 +157,6 @@ __global__ void cuda_matrix_sum (double *C, double *A, double *B, int rows, int 
 /* CPU: substraction of matrix */
 void matrix_sub(double *c, double *a, double *b, int rows, int cols)
 {
-
     int col, row;
     double sum;
 
@@ -175,13 +172,13 @@ void matrix_sub(double *c, double *a, double *b, int rows, int cols)
 /* GPU: substraction of matrix  */
 __global__ void cuda_matrix_sub (double *C, double *A, double *B, int rows, int cols)
 {
-  int idx = (threadIdx.x + blockIdx.x * blockDim.x); 
+  int idx = threadIdx.x + blockIdx.x * blockDim.x; 
   if(idx<(rows*cols)) /*ensure threads not outside dim*/
     C[idx] = A[idx] - B[idx];
 }
 
 
-
+/* CPU: mul cnt */
 void matrix_mul_cnt(double *m, int rows, int cols, double cnt){
 
     int col, row;
@@ -193,6 +190,15 @@ void matrix_mul_cnt(double *m, int rows, int cols, double cnt){
     }
 }
 
+/* GPU:  mul cnt  */
+__global__ void cuda_matrix_mul_cnt(double *A, int rows, int cols, double cnt)
+{
+  int idx = threadIdx.x + blockIdx.x * blockDim.x; 
+  if(idx<(rows*cols)) /*ensure threads not outside dim*/
+    A[idx] *= cnt;
+}
+
+/* CPU:  zero  */
 void matrix_zero(double *m, int rows, int cols){
 
     int col, row;
@@ -204,9 +210,18 @@ void matrix_zero(double *m, int rows, int cols){
     }
 }
 
-/* CPU: cuda matrix mul dot*/
-void matrix_mul_dot(double *c, double *a, double *b, int rows, int cols){
+/* GPU:  zero  */
+__global__ void cuda_matrix_zero(double *A, int rows, int cols)
+{
+  int idx = threadIdx.x + blockIdx.x * blockDim.x; 
+  if(idx<(rows*cols)) /*ensure threads not outside dim*/
+    A[idx] = 0.0;
+}
 
+
+/* CPU: cuda matrix mul dot*/
+void matrix_mul_dot(double *c, double *a, double *b, int rows, int cols)
+{
     int col, row;
     double prod;
 
@@ -219,28 +234,14 @@ void matrix_mul_dot(double *c, double *a, double *b, int rows, int cols){
     }
 }
 
-/* GPU: cuda matrix mul dot*/
-__global__ void cuda_matrix_mul_dot(double *C, double *A, double *B, int rows, int cols)
+/* GPU: cuda matrix mul dot  */
+__global__ void cuda_matrix_sub (double *C, double *A, double *B, int rows, int cols)
 {
-    float sum = 0;
-    int i;
-    int idx = blockIdx.x * blockDim.x + threadIdx.x;
-    __shared__ float tmp[THR_PER_BLOCK];
-    
-
-    if (idx < rows*cols)
-    {
-        tmp[threadIdx.x]=A[idx]*B[idx]; /* need index inside block */
-        __syncthreads();
-        if(threadIdx.x == 0)
-        {
-            for(i=0; i<THR_PER_BLOCK; i++)
-                sum += tmp[i];
-
-            atomicAdd(C, sum);
-        }
-    }
+  int idx = threadIdx.x + blockIdx.x * blockDim.x; 
+  if(idx<(rows*cols)) /*ensure threads not outside dim*/
+    C[idx] = A[idx] * B[idx];
 }
+
 
 
 /* CPU: matrix transpose */
@@ -262,19 +263,30 @@ double *matrix_transpose(double *m, int rows, int cols){
     return(m_t);
 }
 
-
 /* GPU: matrix transpose */
-__global__ void cuda_mat_transp(float * A, float * R, int rows, int cols)
+__global__ void cuda_matrix_transpose_square(double * A,, int rows, int cols)
 {
-  int idx = (threadIdx.x + blockIdx.x * blockDim.x);
-  int y = idx / cols;
-  int x = idx % rows;
+	assert(cols == rows);
+	int idx = threadIdx.x + blockIdx.x * blockDim.x;
+	int y = idx / cols;
+	int x = idx % rows;
 
-  R[idx] = A[x*blockDim.x + y];
+	A[idx] = A[x*blockDim.x + y];
 }
 
-void matrix_mul(double *c, double *a, double *b, int a_rows, int a_cols, int b_rows, int b_cols){
+/* GPU: matrix transpose */
+__global__ void cuda_matrix_transpose(double * A, double * R, int rows, int cols)
+{
+	int idx = threadIdx.x + blockIdx.x * blockDim.x;
+	int y = idx / cols;
+	int x = idx % rows;
 
+	R[idx] = A[x*blockDim.x + y];
+}
+
+/* CPU: cuda matrix mul */
+void matrix_mul(double *c, double *a, double *b, int a_rows, int a_cols, int b_rows, int b_cols)
+{
     assert(a_cols == b_rows);
 
     int i, col, row;
@@ -305,7 +317,45 @@ void matrix_mul(double *c, double *a, double *b, int a_rows, int a_cols, int b_r
 
 }
 
-void matrix_mul_add(double *c, double *a, double *b, int a_rows, int a_cols, int b_rows, int b_cols, double *d){
+/* GPU: cuda matrix mul */
+__global__ void cuda_matrix_mul(double *C, double *A, double *B, int a_rows, int a_cols, int b_rows, int b_cols)
+{
+	assert(a_cols == b_rows);
+    double sum = 0;
+    int i;
+    int idx = blockIdx.x * blockDim.x + threadIdx.x;
+    __shared__ double tmp[THR_PER_BLOCK];
+    
+#ifdef TIMING
+    int res_time;
+    struct timespec t1, t2;
+    clockid_t clk_id = CLOCK_MONOTONIC;
+    res_time = clock_gettime(clk_id, &t1);
+#endif
+
+
+    if (idx < a_rows*b_cols)
+    {
+        tmp[threadIdx.x]=A[idx]*B[idx]; /* need index inside block */
+        __syncthreads();
+        if(threadIdx.x == 0)
+        {
+            for(i=0; i<THR_PER_BLOCK; i++)
+                sum += tmp[i];
+
+            atomicAdd(C, sum);
+        }
+    }
+	
+#ifdef TIMING
+    res_time = clock_gettime(clk_id, &t2);
+    printf("Matrix mul execution time: %ld us \n", diff_time(t2, t1));
+#endif
+}
+
+/* matrix multiplication add */
+void matrix_mul_add(double *c, double *a, double *b, int a_rows, int a_cols, int b_rows, int b_cols, double *d)
+{
 
     int i, col, row;
     double sum;
@@ -322,10 +372,48 @@ void matrix_mul_add(double *c, double *a, double *b, int a_rows, int a_cols, int
     }
 }
 
-void matrix_func(double *n, double *m, int rows, int cols, double (*func)(double)){
-    
-    int col, row;
 
+/* matrix multiplication add */
+__global__ void cuda_matrix_mul_add(double *C, double *A, double *B, int a_rows, int a_cols, int b_rows, int b_cols, double *D)
+{
+	assert(a_cols == b_rows);
+    double sum = 0;
+    int i;
+    int idx = blockIdx.x * blockDim.x + threadIdx.x;
+    __shared__ double tmp[THR_PER_BLOCK];
+    
+#ifdef TIMING
+    int res_time;
+    struct timespec t1, t2;
+    clockid_t clk_id = CLOCK_MONOTONIC;
+    res_time = clock_gettime(clk_id, &t1);
+#endif
+
+
+    if (idx < a_rows*b_cols)
+    {
+        tmp[threadIdx.x]=A[idx]*B[idx]; /* need index inside block */
+        __syncthreads();
+        if(threadIdx.x == 0)
+        {
+            for(i=0; i<THR_PER_BLOCK; i++)
+                sum += tmp[i];
+
+			sum +=D[idx];
+            atomicAdd(C, sum);
+        }
+    }
+	
+#ifdef TIMING
+    res_time = clock_gettime(clk_id, &t2);
+    printf("Matrix mul execution time: %ld us \n", diff_time(t2, t1));
+#endif
+}
+
+/* CPU: apply fun to matrix */
+void matrix_func(double *n, double *m, int rows, int cols, double (*func)(double))
+{    
+    int col, row;
     for (row = 0; row < rows; row++){
         for(col = 0; col < cols; col++){
             *m_elem(n, cols, row, col) = func(*m_elem(m, cols, row, col));
@@ -333,8 +421,17 @@ void matrix_func(double *n, double *m, int rows, int cols, double (*func)(double
     }
 }
 
-void print_matrix(double *m, int m_rows, int m_cols){
-    
+/* GPU:  apply fun to matrix */
+__global__ void cuda_matrix_func (double *A, double *B, int rows, int cols, double (*func)(double))
+{
+  int idx = threadIdx.x + blockIdx.x * blockDim.x; 
+  if(idx<(rows*cols)) /*ensure threads not outside dim*/
+    A[idx] = func(B[idx]);
+}
+
+/* print matrix */
+void print_matrix(double *m, int m_rows, int m_cols)
+{
     int col, row;
     printf("%d %d\n", m_rows, m_cols);
     for (row = 0; row < m_rows; row++){
