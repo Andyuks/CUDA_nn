@@ -1,6 +1,7 @@
 #include "nn.h"
 #include "matrix.h"
 #include "test.h"
+#include "test.h"
     
 void forward_pass_test(nn_t *nn, double *input, double **A){
 
@@ -17,6 +18,9 @@ void forward_pass_test(nn_t *nn, double *input, double **A){
     }
 }
 
+#ifdef GPU
+	#include "matrixcu.h"
+#endif
 
 void cuda_forward_pass_test(nn_t *nn, double *input, double **A){
 

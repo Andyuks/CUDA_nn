@@ -89,6 +89,7 @@ void update(nn_t *nn, double **D, double **d, double lr, int batch_size){
 #ifdef GPU
 
 #include "train.h"
+#include "matrixcu.h"
 
 void forward_pass(nn_t *nn, double *input, double **A, double **Z){
 
