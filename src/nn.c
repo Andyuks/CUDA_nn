@@ -107,7 +107,8 @@ void test(nn_t *nn, ds_t *ds){
 
 
 #ifdef GPU
-#include "matrixcu.h"
+#include "matrix.cuh"
+#include "test.cuh"
 void train(nn_t *nn, ds_t *ds, int epochs, int size_batch, double lr)
 {
     int i, n, x, n_batches, min_batch;
