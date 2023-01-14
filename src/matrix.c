@@ -104,10 +104,19 @@ void matrix_free_2D(double **m, int n_layers){
     free(m);
 }
 
+/* CPU: matrix free */
 void matrix_free(double *m){
 
     if (m != NULL)
         free(m);
+}
+
+
+/* GPU: matrix free */
+void cuda_matrix_free(double *m){
+
+    if (m != NULL)
+        cudaFree(m);
 }
 
 double *m_elem(double *m, int length, int x, int y){
@@ -115,7 +124,11 @@ double *m_elem(double *m, int length, int x, int y){
     return (double*)&m[length * x + y];
 }
 
-void matrix_sum(double *c, double *a, double *b, int rows, int cols){
+/* operations */ 
+
+/* CPU: addition of matrix */
+void matrix_sum(double *c, double *a, double *b, int rows, int cols)
+{
 
     int  col, row;
     double sum;
@@ -129,7 +142,17 @@ void matrix_sum(double *c, double *a, double *b, int rows, int cols){
     }
 }
 
-void matrix_sub(double *c, double *a, double *b, int rows, int cols){
+/* GPU: addition of matrix */
+__global__ void cuda_matrix_sum (double *C, double *A, double *B, int rows, int cols)
+{
+  int idx = (threadIdx.x + blockIdx.x * blockDim.x); 
+  if(idx<(rows*cols)) /*ensure threads not outside dim*/
+    C[idx] = A[idx] + B[idx];
+}
+
+/* CPU: substraction of matrix */
+void matrix_sub(double *c, double *a, double *b, int rows, int cols)
+{
 
     int col, row;
     double sum;
@@ -141,6 +164,17 @@ void matrix_sub(double *c, double *a, double *b, int rows, int cols){
         }
     }
 }
+
+
+
+/* GPU: substraction of matrix  */
+__global__ void cuda_matrix_sum (double *C, double *A, double *B, int rows, int cols)
+{
+  int idx = (threadIdx.x + blockIdx.x * blockDim.x); 
+  if(idx<(rows*cols)) /*ensure threads not outside dim*/
+    C[idx] = A[idx] + B[idx];
+}
+
 
 void matrix_mul_cnt(double *m, int rows, int cols, double cnt){
 
