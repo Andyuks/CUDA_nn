@@ -204,6 +204,7 @@ void matrix_zero(double *m, int rows, int cols){
     }
 }
 
+/* CPU: cuda matrix mul dot*/
 void matrix_mul_dot(double *c, double *a, double *b, int rows, int cols){
 
     int col, row;
@@ -218,6 +219,31 @@ void matrix_mul_dot(double *c, double *a, double *b, int rows, int cols){
     }
 }
 
+/* GPU: cuda matrix mul dot*/
+__global__ void cuda_matrix_mul_dot(double *C, double *A, double *B, int rows, int cols)
+{
+    float sum = 0;
+    int i;
+    int idx = blockIdx.x * blockDim.x + threadIdx.x;
+    __shared__ float tmp[THR_PER_BLOCK];
+    
+
+    if (idx < rows*cols)
+    {
+        tmp[threadIdx.x]=A[idx]*B[idx]; /* need index inside block */
+        __syncthreads();
+        if(threadIdx.x == 0)
+        {
+            for(i=0; i<THR_PER_BLOCK; i++)
+                sum += tmp[i];
+
+            atomicAdd(C, sum);
+        }
+    }
+}
+
+
+/* CPU: matrix transpose */
 double *matrix_transpose(double *m, int rows, int cols){
 
     double *m_t;
@@ -234,6 +260,17 @@ double *matrix_transpose(double *m, int rows, int cols){
     }
     
     return(m_t);
+}
+
+
+/* GPU: matrix transpose */
+__global__ void cuda_mat_transp(float * A, float * R, int rows, int cols)
+{
+  int idx = (threadIdx.x + blockIdx.x * blockDim.x);
+  int y = idx / cols;
+  int x = idx % rows;
+
+  R[idx] = A[x*blockDim.x + y];
 }
 
 void matrix_mul(double *c, double *a, double *b, int a_rows, int a_cols, int b_rows, int b_cols){
