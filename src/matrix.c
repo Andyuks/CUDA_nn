@@ -1,3 +1,4 @@
+/* matrix.c */
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
@@ -10,6 +11,7 @@
     #include "utils.h"
 #endif
 
+/* CPU: alloc matrix 2V*/
 double **alloc_matrix_2v(int n_layers, int *size, int *size_prev, double (*init_weight_ptr)(void)){
 
     double **m;
@@ -34,8 +36,33 @@ double **alloc_matrix_2v(int n_layers, int *size, int *size_prev, double (*init_
     return(m);
 }
 
-double **alloc_matrix_1v(int n_layers, int *size, double (*init_weight_ptr)(void)){
 
+/* GPU: alloc matrix 2V*/
+double **cuda_alloc_matrix_2v(int n_layers, int *size, int *size_prev, double (*init_weight_ptr)(void))
+{
+    double **m;
+    int idx = threadIdx.x + blockIdx.x * blockDim.x;
+
+    if ((m = (double**)gpuErrchk(cudaMalloc(n_layers * sizeof(double*)))) == NULL) {
+        return(NULL);
+    }
+
+    if(idx < n_layers) 
+        if ((m[idx] = (double*)gpuErrchk(cudaMalloc(size[i] * size_prev[i] * sizeof(double)))) == NULL) 
+		{
+            cuda_matrix_free_2D(m, n_layers);
+            return(NULL);
+        }
+
+    if(idx<(n_layers*size[i] * size_prev[i])) 
+		m[idx] = init_weight_ptr();
+       
+    return(m);
+}
+
+/* CPU: alloc matrix 1V*/
+double **alloc_matrix_1v(int n_layers, int *size, double (*init_weight_ptr)(void))
+{
     double **m;
     int i, j;
 
@@ -58,6 +85,31 @@ double **alloc_matrix_1v(int n_layers, int *size, double (*init_weight_ptr)(void
     return(m);
 }
 
+
+/* GPU: alloc matrix 1V*/
+double **cuda_alloc_matrix_1v(int n_layers, int *size, double (*init_weight_ptr)(void))
+{
+    double **m;
+    int idx = threadIdx.x + blockIdx.x * blockDim.x;
+
+    if ((m = (double**)gpuErrchk(cudaMalloc(n_layers * sizeof(double*)))) == NULL) {
+        return(NULL);
+    }
+
+    if(idx < n_layers) 
+        if ((m[idx] = (double*)gpuErrchk(cudaMalloc(size[i] * size_prev[i] * sizeof(double)))) == NULL) 
+		{
+            cuda_matrix_free_2D(m, n_layers);
+            return(NULL);
+        }
+
+    if(idx < (n_layers*size[i])) 
+		m[idx] = init_weight_ptr();
+       
+    return(m);
+}
+
+/* CPU: alloc array */
 double *alloc_array(int length){
 
     double *v;
@@ -74,7 +126,23 @@ double *alloc_array(int length){
     return(v);
 }
 
+/* GPU: alloc array */
+double *cuda_alloc_array(int length){
 
+    double *v;
+    int idx = threadIdx.x + blockIdx.x * blockDim.x; 
+
+    if ((v = (double*)gpuErrchk(cudaMalloc(length* sizeof(double)))) == NULL) {
+        return(NULL);
+    }
+
+    if(idx < length)
+        v[idx] = 0.0;
+    
+    return(v);
+}
+
+/* CPU: alloc matrix */
 double *alloc_matrix(int rows, int cols){
 
     double *m;
@@ -92,8 +160,26 @@ double *alloc_matrix(int rows, int cols){
 }
 
 
-void matrix_free_2D(double **m, int n_layers){
+/* GPU: alloc matrix */
+double *cuda_alloc_matrix(int rows, int cols){
 
+    double *m;
+    int idx = blockIdx.x * blockDim.x + threadIdx.x;
+
+    if ((m = (double*)gpuErrchk(cudaMalloc((rows * cols * sizeof(double))))) == NULL) {
+        return(NULL);
+    }
+
+    if(idx < (rows*cols))
+        m[idx] = 0.0;
+    
+    return(m);
+}
+
+
+/* CPU: matrix free 2D */
+void matrix_free_2D(double **m, int n_layers)
+{
     int i;
 
     for (i=0; i < n_layers; ++i) {
@@ -103,6 +189,18 @@ void matrix_free_2D(double **m, int n_layers){
     }
     free(m);
 }
+
+/* GPU: matrix free 2D */
+void matrix_free_2D(double **m, int n_layers)
+{
+    int idx = threadIdx.x + blockIdx.x * blockDim.x;
+
+	if(idx < n_layers)
+        if (m[idx] != NULL)
+            free(m[idx]);
+    free(m);
+}
+
 
 /* CPU: matrix free */
 void matrix_free(double *m){
@@ -149,9 +247,9 @@ void matrix_sum(double *c, double *a, double *b, int rows, int cols)
 /* GPU: addition of matrix */
 __global__ void cuda_matrix_sum (double *C, double *A, double *B, int rows, int cols)
 {
-  int idx = threadIdx.x + blockIdx.x * blockDim.x; 
-  if(idx<(rows*cols)) /*ensure threads not outside dim*/
-    C[idx] = A[idx] + B[idx];
+	int idx = threadIdx.x + blockIdx.x * blockDim.x; 
+	if(idx<(rows*cols)) /*ensure threads not outside dim*/
+		C[idx] = A[idx] + B[idx];
 }
 
 /* CPU: substraction of matrix */
@@ -172,9 +270,9 @@ void matrix_sub(double *c, double *a, double *b, int rows, int cols)
 /* GPU: substraction of matrix  */
 __global__ void cuda_matrix_sub (double *C, double *A, double *B, int rows, int cols)
 {
-  int idx = threadIdx.x + blockIdx.x * blockDim.x; 
-  if(idx<(rows*cols)) /*ensure threads not outside dim*/
-    C[idx] = A[idx] - B[idx];
+	int idx = threadIdx.x + blockIdx.x * blockDim.x; 
+	if(idx<(rows*cols)) /*ensure threads not outside dim*/
+		C[idx] = A[idx] - B[idx];
 }
 
 
@@ -193,9 +291,9 @@ void matrix_mul_cnt(double *m, int rows, int cols, double cnt){
 /* GPU:  mul cnt  */
 __global__ void cuda_matrix_mul_cnt(double *A, int rows, int cols, double cnt)
 {
-  int idx = threadIdx.x + blockIdx.x * blockDim.x; 
-  if(idx<(rows*cols)) /*ensure threads not outside dim*/
-    A[idx] *= cnt;
+	int idx = threadIdx.x + blockIdx.x * blockDim.x; 
+	if(idx<(rows*cols)) /*ensure threads not outside dim*/
+		A[idx] *= cnt;
 }
 
 /* CPU:  zero  */
@@ -213,9 +311,9 @@ void matrix_zero(double *m, int rows, int cols){
 /* GPU:  zero  */
 __global__ void cuda_matrix_zero(double *A, int rows, int cols)
 {
-  int idx = threadIdx.x + blockIdx.x * blockDim.x; 
-  if(idx<(rows*cols)) /*ensure threads not outside dim*/
-    A[idx] = 0.0;
+	int idx = threadIdx.x + blockIdx.x * blockDim.x; 
+	if(idx<(rows*cols)) /*ensure threads not outside dim*/
+		A[idx] = 0.0;
 }
 
 
@@ -237,9 +335,9 @@ void matrix_mul_dot(double *c, double *a, double *b, int rows, int cols)
 /* GPU: cuda matrix mul dot  */
 __global__ void cuda_matrix_sub (double *C, double *A, double *B, int rows, int cols)
 {
-  int idx = threadIdx.x + blockIdx.x * blockDim.x; 
-  if(idx<(rows*cols)) /*ensure threads not outside dim*/
-    C[idx] = A[idx] * B[idx];
+	int idx = threadIdx.x + blockIdx.x * blockDim.x; 
+	if(idx<(rows*cols)) /*ensure threads not outside dim*/
+		C[idx] = A[idx] * B[idx];
 }
 
 
@@ -424,9 +522,9 @@ void matrix_func(double *n, double *m, int rows, int cols, double (*func)(double
 /* GPU:  apply fun to matrix */
 __global__ void cuda_matrix_func (double *A, double *B, int rows, int cols, double (*func)(double))
 {
-  int idx = threadIdx.x + blockIdx.x * blockDim.x; 
-  if(idx<(rows*cols)) /*ensure threads not outside dim*/
-    A[idx] = func(B[idx]);
+	int idx = threadIdx.x + blockIdx.x * blockDim.x; 
+	if(idx<(rows*cols)) /*ensure threads not outside dim*/
+		A[idx] = func(B[idx]);
 }
 
 /* print matrix */
@@ -442,3 +540,8 @@ void print_matrix(double *m, int m_rows, int m_cols)
     }
     printf("\n");
 }
+
+
+
+
+
