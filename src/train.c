@@ -1,3 +1,4 @@
+#include <omp.h>
 #ifdef CPU
 
 #include "train.h"
@@ -6,10 +7,12 @@ void forward_pass(nn_t *nn, double *input, double **A, double **Z){
 
     int i;
 
+    #pragma omp parallel for private (i) schedule (static)
     for(i = 0; i < nn->layers_size[0]; i++){
         A[0][i] = input[i];
     }
-    
+        
+    // RAW dist 1 -> cannot use omp
     for(i = 1; i < nn->n_layers; i++){
 
         matrix_mul_add(Z[i], nn->WH[i - 1], A[i - 1],  nn->layers_size[i], nn->layers_size[i - 1], nn->layers_size[i - 1], 1, nn->BH[i - 1]);  
@@ -45,6 +48,8 @@ double back_prop(nn_t *nn, double *output, double **A, double **Z, double **D, d
     matrix_sum(D[n_l - 2], D[n_l - 2], D_aux[n_l - 2], l_s[n_l - 1], l_s[n_l - 2]);
     matrix_sum(d[n_l - 2], d[n_l - 2], E[n_l - 2], l_s[n_l - 1], 1);
 
+    //WAR dist 1??
+    #pragma omp parallel for private (i) schedule (static)
     for (i = n_l - 2; i > 0; i--) {
             
         T = matrix_transpose(nn->WH[i], l_s[i + 1], l_s[i]);
@@ -69,7 +74,7 @@ double back_prop(nn_t *nn, double *output, double **A, double **Z, double **D, d
 void update(nn_t *nn, double **D, double **d, double lr, int batch_size){
 
     int i;
-
+    #pragma omp parallel for private (i) schedule (static)
     for(i = 0; i < nn->n_layers - 1; i++){
 
         matrix_mul_cnt(D[i], nn->layers_size[i + 1], nn->layers_size[i],  lr * (1.0 / batch_size));
