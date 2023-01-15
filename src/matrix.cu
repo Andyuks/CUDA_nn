@@ -17,8 +17,7 @@
 
 
 /* GPU: alloc matrix 2V*/
-double **cuda_alloc_matrix_2v(int n_layers, int *size, int *size_prev, double (*init_weight_ptr)(void))
-{
+double **cuda_alloc_matrix_2v(int n_layers, int *size, int *size_prev, double (*init_weight_ptr)(void)){
     double **m;
     int idx = threadIdx.x + blockIdx.x * blockDim.x;
 
