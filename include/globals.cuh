@@ -1,6 +1,8 @@
 #ifndef __GLOBALS_H
 #define __GLOBALS_H
 
+#include <cuda_runtime.h>
+
 extern int verbose;
 extern int seed;
 extern int train_mode;
@@ -26,6 +28,7 @@ extern char model[100];
 
 #define THR_PER_BLOCK 1024
 
+/*
 #define gpuErrchk(call)                                 \
   do {                                                        \
     cudaError_t err = call;                                   \
@@ -35,5 +38,11 @@ extern char model[100];
       exit(EXIT_FAILURE);                                     \
     }                                                         \
   } while (0)
+*/
+#endif
 
+
+#if !defined(__CUDA_ARCH__) || __CUDA_ARCH__ >= 600
+#else
+__device__ double atomicAdd(double* a, double b) { return b; }
 #endif

@@ -1,5 +1,6 @@
 /* matrix.cu */
 #include <cuda.h>
+#include <cuda_runtime.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
@@ -21,20 +22,25 @@ double **cuda_alloc_matrix_2v(int n_layers, int *size, int *size_prev, double (*
     double **m;
     int idx = threadIdx.x + blockIdx.x * blockDim.x;
 
-    if(gpuErrchk(cudaMalloc(&m, n_layers * sizeof(double*))) == NULL) {
-        return(NULL);
-    }
+    cudaError_t malloc_call;
+    malloc_call = cudaMalloc(&m, n_layers * sizeof(double*));
+    
+    if (malloc_call != cudaSuccess)
+        return NULL;
 
-    if(idx < n_layers) 
-        if (gpuErrchk(cudaMalloc(&m[idx], size[i] * size_prev[i] * sizeof(double))) == NULL) {
+    if(idx < n_layers) {
+        malloc_call = cudaMalloc(&m[idx], size[idx] * size_prev[idx] * sizeof(double));
+        if (malloc_call != cudaSuccess) {
             cuda_matrix_free_2D(m, n_layers);
-            return(NULL);
+            return NULL;
         }
-
-    if(idx < (n_layers*size[i] * size_prev[i])) 
-		m[idx] = init_weight_ptr();
+    }
+    
+    if(idx < (n_layers * size[idx] * size_prev[idx])) 
+		(*m)[idx] = init_weight_ptr();
        
-    return(m);
+    return m;
+    
 }
 
 
@@ -43,20 +49,24 @@ double **cuda_alloc_matrix_1v(int n_layers, int *size, double (*init_weight_ptr)
     double **m;
     int idx = threadIdx.x + blockIdx.x * blockDim.x;
 
-    if (gpuErrchk(cudaMalloc(&m, n_layers * sizeof(double*))) == NULL) {
-        return(NULL);
-    }
+    cudaError_t malloc_call;
+    malloc_call = cudaMalloc(&m, n_layers * sizeof(double*));
+    
+    if (malloc_call != cudaSuccess)
+        return NULL;
 
-    if(idx < n_layers) 
-        if (gpuErrchk(cudaMalloc(&m[idx], size[i] * size_prev[i] * sizeof(double))) == NULL) {
+    if(idx < n_layers) {
+        malloc_call = cudaMalloc(&m[idx], size[idx] * sizeof(double));
+        if (malloc_call != cudaSuccess) {
             cuda_matrix_free_2D(m, n_layers);
-            return(NULL);
+            return NULL;
         }
-
-    if(idx < (n_layers * size[i])) 
-		m[idx] = init_weight_ptr();
+    }
+    
+    if(idx < (n_layers * size[idx])) 
+		(*m)[idx] = init_weight_ptr();
        
-    return(m);
+    return m;
 }
 
 
@@ -66,9 +76,11 @@ double *cuda_alloc_array(int length) {
     double *v;
     int idx = threadIdx.x + blockIdx.x * blockDim.x; 
 
-    if (gpuErrchk(cudaMalloc(&v, length * sizeof(double))) == NULL) {
-        return(NULL);
-    }
+    cudaError_t malloc_call;
+    malloc_call = cudaMalloc(&v, length * sizeof(double));
+    
+    if (malloc_call != cudaSuccess)
+        return NULL;
 
     if(idx < length)
         v[idx] = 0.0;
@@ -85,9 +97,11 @@ double *cuda_alloc_matrix(int rows, int cols) {
     double *m;
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
-    if (gpuErrchk(cudaMalloc(&m, rows * cols * sizeof(double))) == NULL) {
-        return(NULL);
-    }
+    cudaError_t malloc_call;
+    malloc_call = cudaMalloc(&m, rows * cols * sizeof(double));
+    
+    if (malloc_call != cudaSuccess)
+        return NULL;
 
     if(idx < (rows * cols))
         m[idx] = 0.0;
@@ -175,17 +189,18 @@ __global__ void cuda_matrix_mul_dot(double *C, double *A, double *B, int rows, i
 /* GPU: matrix transpose */
 __global__ double * cuda_matrix_transpose(double * m, int rows, int cols) {
     double *m_tr;
-
-    if (getErrchk(cudaMalloc(&m_tr, rows * cols * sizeof(double))) == NULL) {
-        return(NULL);
-    }
     
+    cudaError_t malloc_call;
+    malloc_call = cudaMalloc(&m_tr, rows * cols * sizeof(double));
+    
+    if (malloc_call != cudaSuccess)
+        return NULL;
+
 	int idx = threadIdx.x + blockIdx.x * blockDim.x;
 	int i = idx / cols;
 	int j = idx % cols;
 
 	m[idx] = m[j * blockDim.x + i];
-	//m[idx] = mat[j * rows + i];
     return(m_tr);
 }
 
@@ -228,7 +243,7 @@ __global__ void cuda_matrix_mul(double *C, double *A, double *B, int a_rows, int
 /* matrix multiplication add */
 
 __global__ void cuda_matrix_mul_add(double *C, double *A, double *B, int a_rows, int a_cols, int b_rows, int b_cols, double *D) {
-		assert(a_cols == b_rows);
+	assert(a_cols == b_rows);
     double sum = 0.0;
     int i;
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
