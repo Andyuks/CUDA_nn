@@ -281,7 +281,7 @@ void matrix_mul_add(double *c, double *a, double *b, int a_rows, int a_cols, int
     __m512d va, vb, vc;
     __m512d vindex = _mm256_setr_epi32 (0*b_cols, 1*b_cols, 2*b_cols, 3*b_cols, 4*b_cols, 5*b_cols, 6*b_cols, 7*b_cols); 
 
-    #pragma omp parallel for private(row, col, i, va, vb, vc, vd, vs) schedule (static) 
+    #pragma omp parallel for private(row, col, i, va, vb, vc) schedule (static) 
     for (row = 0; row < a_rows; row++) {
         for(col = 0; col < b_cols; col++) {
             vc = _mm512_setzero_ps();
