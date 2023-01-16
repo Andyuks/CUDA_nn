@@ -163,7 +163,7 @@ void matrix_mul_cnt(double *m, int rows, int cols, double cnt){
 
     v_cnt = _mm512_set1_pd(cnt);
 
-    #pragma omp parallel for private (row, col, v_cnt, vm, vm_d) schedule (static)
+    #pragma omp parallel for private (row, col, vm, vm_d) shared (v_cnt) schedule (static)
     for (row = 0; row < rows; row++) {
         for(col = 0; col < cols - cols % 8; col+=8) {
             vm = _mm512_load_pd(&m[row * cols + col]);
@@ -182,7 +182,7 @@ void matrix_zero(double *m, int rows, int cols){
     int col, row;
     __m512d v0 = _mm512_setzero_pd();
 
-    #pragma omp parallel for private (row, col, v0) schedule (static)
+    #pragma omp parallel for private (row, col) shared (v0) schedule (static)
     for (row = 0; row < rows; row++) {
         for(col = 0; col < cols - cols % 8; col+=8) {
             _mm512_store_pd(&m[row * cols + col], v0);
@@ -243,7 +243,7 @@ void matrix_mul(double *c, double *a, double *b, int a_rows, int a_cols, int b_r
 
     int i, col, row;
     __m512d va, vb, vc;
-    __m512d v_idx = _mm256_setr_epi32(0, 1*b_cols, 2*b_cols, 3*b_cols, 4*b_cols, 5*b_cols, 6*b_cols, 7*b_cols); 
+    __m256i v_idx = _mm256_setr_epi32(0, 1*b_cols, 2*b_cols, 3*b_cols, 4*b_cols, 5*b_cols, 6*b_cols, 7*b_cols); 
 
 #ifdef TIMING
     int res_time;
@@ -255,7 +255,7 @@ void matrix_mul(double *c, double *a, double *b, int a_rows, int a_cols, int b_r
     #pragma omp parallel for private(row, col, i, va, vb, vc) schedule (static) 
     for (row = 0; row < a_rows; row++) {
         for(col = 0; col < b_cols; col++) {
-            vc = _mm512_setzero_ps();
+            vc = _mm512_setzero_pd();
 
             for (i = 0; i < a_cols - a_cols % 8; i+=8) {
                 va = _mm512_load_pd(&a[a_cols * row + i]);
@@ -284,12 +284,12 @@ void matrix_mul_add(double *c, double *a, double *b, int a_rows, int a_cols, int
 
     int i, col, row;
     __m512d va, vb, vc;
-    __m512d v_idx = _mm256_setr_epi32(0, 1*b_cols, 2*b_cols, 3*b_cols, 4*b_cols, 5*b_cols, 6*b_cols, 7*b_cols); 
+    __m256i v_idx = _mm256_setr_epi32(0, 1*b_cols, 2*b_cols, 3*b_cols, 4*b_cols, 5*b_cols, 6*b_cols, 7*b_cols); 
 
     #pragma omp parallel for private(row, col, i, va, vb, vc) schedule (static) 
     for (row = 0; row < a_rows; row++) {
         for(col = 0; col < b_cols; col++) {
-            vc = _mm512_setzero_ps();
+            vc = _mm512_setzero_pd();
 
             for (i = 0; i < a_cols - a_cols % 8; i+=8) {
                 va = _mm512_load_pd(&a[a_cols * row + i]);
