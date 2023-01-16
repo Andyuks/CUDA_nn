@@ -196,7 +196,7 @@ void matrix_mul_dot(double *c, double *a, double *b, int rows, int cols){
     __m512d va, vb, vc;
 
     #pragma omp parallel for private (row, col) schedule (static)
-    for (row = 0; row < rows; row++) {
+    for (row = 0; row < rows; row+=8) {
         for(col = 0; col < cols; col++) {
             va = _mm512_load_pd (&a[row*cols + col]);
             vb = _mm512_load_pd (&b[row*cols + col]);
@@ -219,7 +219,7 @@ double *matrix_transpose(double *m, int rows, int cols){
     }
 
     #pragma omp parallel for private (i,j) schedule (static)
-    for (i = 0; i < rows; i++){
+    for (i = 0; i < rows; i+=8){
         for (j = 0; j < cols; j++){
             _mm512_store_pd (&m_t[j*rows + i], &m[i*cols + j]);
             //*m_elem(m_t, rows, j, i) = *m_elem(m, cols, i, j);
