@@ -213,6 +213,7 @@ double *matrix_transpose(double *m, int rows, int cols){
 
     double *m_t;
     int i, j;
+    __m512d vm;
     
     if ((m_t = (double*)malloc(rows * cols * sizeof(double))) == NULL) {
         return(NULL);
@@ -221,7 +222,8 @@ double *matrix_transpose(double *m, int rows, int cols){
     #pragma omp parallel for private (i,j) schedule (static)
     for (i = 0; i < rows; i+=8){
         for (j = 0; j < cols; j++){
-            _mm512_store_pd (&m_t[j*rows + i], &m[i*cols + j]);
+            vm = _mm512_load_pd (&m[i*cols + j]]);
+            _mm512_store_pd (&m_t[j*rows + i], vm);
             //*m_elem(m_t, rows, j, i) = *m_elem(m, cols, i, j);
         }
     }
