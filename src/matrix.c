@@ -163,7 +163,7 @@ void matrix_mul_cnt(double *m, int rows, int cols, double cnt){
     __m512d va =_mm512_set1_pd (cnt);
     __m512d vb, vc;
 
-    #pragma omp parallel for private (row, col) schedule (static)
+    #pragma omp parallel for private (row, col, vb, vc) schedule (static)
     for (row = 0; row < rows; row+=8) {
         for(col = 0; col < cols; col++) {
             vb = _mm512_load_pd (&m[row*cols + col]);
@@ -195,7 +195,7 @@ void matrix_mul_dot(double *c, double *a, double *b, int rows, int cols){
     //double prod;
     __m512d va, vb, vc;
 
-    #pragma omp parallel for private (row, col) schedule (static)
+    #pragma omp parallel for private (row, col, va, vb, vc) schedule (static)
     for (row = 0; row < rows; row+=8) {
         for(col = 0; col < cols; col++) {
             va = _mm512_load_pd (&a[row*cols + col]);
@@ -219,7 +219,7 @@ double *matrix_transpose(double *m, int rows, int cols){
         return(NULL);
     }
 
-    #pragma omp parallel for private (i,j) schedule (static)
+    #pragma omp parallel for private (i,j, vm) schedule (static)
     for (i = 0; i < rows; i+=8){
         for (j = 0; j < cols; j++){
             vm = _mm512_load_pd (&m[i*cols + j]]);
@@ -246,7 +246,7 @@ void matrix_mul(double *c, double *a, double *b, int a_rows, int a_cols, int b_r
     res_time = clock_gettime(clk_id, &t1);
 #endif
 
-    #pragma omp parallel for private(row, col, i) schedule (static) reduction (+:sum)
+    #pragma omp parallel for private(row, col, i, va, vb, vc) schedule (static) reduction (+:sum)
     for (row = 0; row < a_rows; row+=8) {
         for(col = 0; col < b_cols; col++) {
             sum = 0.0;
@@ -277,7 +277,7 @@ void matrix_mul_add(double *c, double *a, double *b, int a_rows, int a_cols, int
     double sum;
     __m512d va, vb, vc, vsum, vs, vd;
 
-    #pragma omp parallel for private(row, col, i) schedule (static) reduction (+:sum)
+    #pragma omp parallel for private(row, col, i, va, vb, vmul, vs, vd, vc) schedule (static) reduction (+:sum)
     for (row = 0; row < a_rows; row+=8) {
         for(col = 0; col < b_cols; col++) {
             sum = 0.0;
