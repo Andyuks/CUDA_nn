@@ -189,16 +189,16 @@ __global__ void cuda_matrix_mul_dot(double *C, double *A, double *B, int rows, i
 /* GPU: matrix transpose */
 __global__ double * cuda_matrix_transpose(double * m, int rows, int cols) {
     double *m_tr;
-    
+    int idx, i, j;
     cudaError_t malloc_call;
     malloc_call = cudaMalloc(&m_tr, rows * cols * sizeof(double));
     
     if (malloc_call != cudaSuccess)
         return NULL;
 
-	int idx = threadIdx.x + blockIdx.x * blockDim.x;
-	int i = idx / cols;
-	int j = idx % cols;
+	idx = threadIdx.x + blockIdx.x * blockDim.x;
+	i = idx / cols;
+	j = idx % cols;
 
 	m[idx] = m[j * blockDim.x + i];
     return(m_tr);
