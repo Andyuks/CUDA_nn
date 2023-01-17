@@ -200,7 +200,7 @@ __global__ double * cuda_matrix_transpose(double * m, int rows, int cols) {
 	i = idx / cols;
 	j = idx % cols;
 
-	m[idx] = m[j * blockDim.x + i];
+	m_tr[idx] = m[j * blockDim.x + i];
     return(m_tr);
 }
 
