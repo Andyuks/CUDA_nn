@@ -34,7 +34,7 @@ __global__ void cuda_matrix_zero(double *m, int rows, int cols);
 
 __global__ void cuda_matrix_mul_dot(double *c, double *a, double *b, int rows, int cols);
 
-__global__ double *cuda_matrix_transpose(double *m, int rows, int cols);
+double *cuda_matrix_transpose(double *m, int rows, int cols);
 
 __global__ void cuda_matrix_mul(double *c, double *a, double *b, int a_rows, int a_cols, int b_rows, int b_cols);
 

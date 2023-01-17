@@ -142,7 +142,7 @@ double *m_elem(double *m, int length, int x, int y){
 /* operations */ 
 
 /* GPU: addition of matrix */
-__global__ void cuda_matrix_sum (double *C, double *A, double *B, int rows, int cols) {
+__global__ void cuda_matrix_sum(double *C, double *A, double *B, int rows, int cols) {
 	int idx = threadIdx.x + blockIdx.x * blockDim.x; 
 	if(idx < (rows * cols)) /*ensure threads not outside dim*/
 		C[idx] = A[idx] + B[idx];
@@ -151,7 +151,7 @@ __global__ void cuda_matrix_sum (double *C, double *A, double *B, int rows, int 
 
 
 /* GPU: substraction of matrix  */
-__global__ void cuda_matrix_sub (double *C, double *A, double *B, int rows, int cols) {
+__global__ void cuda_matrix_sub(double *C, double *A, double *B, int rows, int cols) {
 	int idx = threadIdx.x + blockIdx.x * blockDim.x; 
 	if(idx < (rows * cols)) /*ensure threads not outside dim*/
 		C[idx] = A[idx] - B[idx];
@@ -184,26 +184,35 @@ __global__ void cuda_matrix_mul_dot(double *C, double *A, double *B, int rows, i
 		C[idx] = A[idx] * B[idx];
 }
 
-
-
-/* GPU: matrix transpose */
-__global__ double * cuda_matrix_transpose(double * m, int rows, int cols) {
-    double *m_tr;
-    
-    cudaError_t malloc_call;
-    malloc_call = cudaMalloc(&m_tr, rows * cols * sizeof(double));
-    
-    if (malloc_call != cudaSuccess)
-        return NULL;
+/* GPU: matrix transpose (OPERATIONS)*/
+__global__ double * cuda_matrix_transpose_op(double * m, double * m_tr, int rows, int cols) {
 
 	int idx = threadIdx.x + blockIdx.x * blockDim.x;
 	int i = idx / cols;
 	int j = idx % cols;
 
-	m[idx] = m[j * blockDim.x + i];
+	m_tr[idx] = m[j * blockDim.x + i];
     return(m_tr);
 }
 
+/* GPU: matrix transpose */
+double * cuda_matrix_transpose(double * m, int rows, int cols, size_t N) {
+    double *m_tr;
+    
+    // Allocate memory in Host (CPU)
+    cudaError_t malloc_call;
+    malloc_call = cudaMallocHost(&m_tr, rows * cols * sizeof(double));
+    
+    if (malloc_call != cudaSuccess)
+        return NULL;
+
+    // Division of function due to illegal malloc call inside global function
+    int thr_per_blk = THR_PER_BLOCK;
+    int blk_in_grid = ceil( (float)N / thr_per_blk );
+
+	cuda_matrix_transpose_op <<<blk_in_grid, thr_per_blk>>>(m, m_tr, rows, cols);
+    return(m_tr);
+}
 
 /* GPU: cuda matrix mul */
 __global__ void cuda_matrix_mul(double *C, double *A, double *B, int a_rows, int a_cols, int b_rows, int b_cols) {
