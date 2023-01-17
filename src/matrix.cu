@@ -187,9 +187,9 @@ __global__ void cuda_matrix_mul_dot(double *C, double *A, double *B, int rows, i
 /* GPU: matrix transpose (OPERATIONS)*/
 __global__ double * cuda_matrix_transpose_op(double * m, double * m_tr, int rows, int cols) {
 
-	int idx = threadIdx.x + blockIdx.x * blockDim.x;
-	int i = idx / cols;
-	int j = idx % cols;
+	idx = threadIdx.x + blockIdx.x * blockDim.x;
+	i = idx / cols;
+	j = idx % cols;
 
 	m_tr[idx] = m[j * blockDim.x + i];
     return(m_tr);
