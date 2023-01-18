@@ -99,6 +99,9 @@ void forward_pass(nn_t *nn, double *input, double **A, double **Z){
 
     int i;
 	int thr_per_blk, blk_in_grid;
+
+        int N= 100; // TODO BORRAR, TEMPORAL PARA COMPILACION PARA MIRAR ERRORES
+
 	
 	// Set execution configuration parameters
     //      thr_per_blk: number of CUDA threads per grid block

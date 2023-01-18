@@ -1,14 +1,3 @@
-#ifndef __MATRIX_H
-#define __MATRIX_H
-
-double *m_elem(double *m, int length, int x, int y);
-
-void print_matrix(double *m, int m_rows, int m_cols);
-
-#endif
-
-
-
 #ifndef __MATRIX_CUH
 #define __MATRIX_CUH
 
@@ -34,7 +23,7 @@ __global__ void cuda_matrix_zero(double *m, int rows, int cols);
 
 __global__ void cuda_matrix_mul_dot(double *c, double *a, double *b, int rows, int cols);
 
-__global__ double *cuda_matrix_transpose(double *m, double *m_tr, int rows, int cols);
+__global__ void cuda_matrix_transpose(double *m, double *m_tr, int rows, int cols);
 
 __global__ void cuda_matrix_mul(double *c, double *a, double *b, int a_rows, int a_cols, int b_rows, int b_cols);
 

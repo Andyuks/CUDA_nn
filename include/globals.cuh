@@ -1,8 +1,6 @@
 #ifndef __GLOBALS_H
 #define __GLOBALS_H
 
-#include <cuda_runtime.h>
-
 extern int verbose;
 extern int seed;
 extern int train_mode;
@@ -25,6 +23,7 @@ extern char model[100];
 
 #ifndef __GLOBALS_CUH
 #define __GLOBALS_CUH
+//#include <cuda_runtime.h>
 
 #define THR_PER_BLOCK 1024
 
@@ -41,8 +40,9 @@ extern char model[100];
 */
 #endif
 
-
+/*
 #if !defined(__CUDA_ARCH__) || __CUDA_ARCH__ >= 600
 #else
 __device__ double atomicAdd(double* a, double b) { return b; }
 #endif
+*/

@@ -58,7 +58,7 @@ double **cuda_alloc_matrix_1v(int n_layers, int *size, double (*init_weight_ptr)
         return NULL;
 
     for (i = 0; i < n_layers; i++){
-        malloc_call = cudaMalloc(&m[idx], size[idx] * sizeof(double));
+        malloc_call = cudaMalloc(&m[i], size[i] * sizeof(double));
         if (malloc_call != cudaSuccess) {
             cuda_matrix_free_2D(m, n_layers);
             return NULL;
@@ -132,13 +132,6 @@ void cuda_matrix_free(double *m){
 
 
 
-double *m_elem(double *m, int length, int x, int y){
-
-    return (double*)&m[length * x + y];
-}
-
-
-
 /* operations */ 
 
 /* GPU: addition of matrix */
@@ -185,14 +178,13 @@ __global__ void cuda_matrix_mul_dot(double *C, double *A, double *B, int rows, i
 }
 
 /* GPU: matrix transpose */
-__global__ double * cuda_matrix_transpose(double * m, double * m_tr, int rows, int cols) {
+__global__ void cuda_matrix_transpose(double * m, double * m_tr, int rows, int cols) {
 
-	idx = threadIdx.x + blockIdx.x * blockDim.x;
-	i = idx / cols;
-	j = idx % cols;
+	int idx = threadIdx.x + blockIdx.x * blockDim.x;
+	int i = idx / cols;
+	int j = idx % cols;
 
 	m_tr[idx] = m[j * blockDim.x + i];
-    return(m_tr);
 }
 
 
@@ -272,19 +264,4 @@ __global__ void cuda_matrix_func(double *A, double *B, int rows, int cols, doubl
 	int idx = threadIdx.x + blockIdx.x * blockDim.x; 
 	if(idx < (rows * cols)) /*ensure threads not outside dim*/
 		A[idx] = func(B[idx]);
-}
-
-
-/* print matrix */
-void print_matrix(double *m, int m_rows, int m_cols)
-{
-    int col, row;
-    printf("%d %d\n", m_rows, m_cols);
-    for (row = 0; row < m_rows; row++){
-        for(col = 0; col < m_cols; col++){
-            printf("(%d %d) %.*lf ", row, col, 10, *m_elem(m, m_cols, row, col));
-        }
-        printf("\n");
-    }
-    printf("\n");
 }

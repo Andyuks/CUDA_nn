@@ -7,6 +7,7 @@
 #include "nn_aux.h"
 #include "utils.h"
 #include "train.h"
+#include "matrix_common.h"
 
 #ifdef CPU
 #include "globals.h"

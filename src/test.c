@@ -1,6 +1,7 @@
 #include <omp.h>
 #include "nn.h"
 #include "matrix.h"
+#include "matrix_common.h"
 #include "test.h"
     
 void forward_pass_test(nn_t *nn, double *input, double **A){
