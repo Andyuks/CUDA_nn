@@ -126,10 +126,10 @@ void matrix_sum(double *c, double *a, double *b, int rows, int cols){
     #pragma omp parallel for private (row, col, va, vb, vc) schedule (static)
     for (row = 0; row < rows; row++) {
         for(col = 0; col < cols - cols % 8; col+=8) {
-            va = _mm512_load_pd(&a[row*cols + col]);
-            vb = _mm512_load_pd(&b[row*cols + col]);
+            va = _mm512_loadu_pd(&a[row*cols + col]);
+            vb = _mm512_loadu_pd(&b[row*cols + col]);
             vc = _mm512_add_pd(va, vb);
-            _mm512_store_pd(&c[row*cols + col], vc);
+            _mm512_storeu_pd(&c[row*cols + col], vc);
         }
         
         for(; col < cols; col++)
@@ -145,10 +145,10 @@ void matrix_sub(double *c, double *a, double *b, int rows, int cols){
     #pragma omp parallel for private (row, col, va, vb, vc) schedule (static)
     for (row = 0; row < rows; row++) {
         for(col = 0; col < cols - cols % 8; col+=8) {
-            va = _mm512_load_pd(&a[row*cols + col]);
-            vb = _mm512_load_pd(&b[row*cols + col]);
+            va = _mm512_loadu_pd(&a[row*cols + col]);
+            vb = _mm512_loadu_pd(&b[row*cols + col]);
             vc = _mm512_sub_pd(va, vb);
-            _mm512_store_pd(&c[row*cols + col], vc);
+            _mm512_storeu_pd(&c[row*cols + col], vc);
         }
 
         for(; col < cols; col++)
@@ -166,9 +166,9 @@ void matrix_mul_cnt(double *m, int rows, int cols, double cnt){
     #pragma omp parallel for private (row, col, vm, vm_d) shared (v_cnt) schedule (static)
     for (row = 0; row < rows; row++) {
         for(col = 0; col < cols - cols % 8; col+=8) {
-            vm = _mm512_load_pd(&m[row * cols + col]);
+            vm = _mm512_loadu_pd(&m[row * cols + col]);
             vm_d = _mm512_mul_pd(v_cnt, vm);
-            _mm512_store_pd(&m[row * cols + col], vm_d);
+            _mm512_storeu_pd(&m[row * cols + col], vm_d);
         }
 
         for(; col < cols; col++)
@@ -185,7 +185,7 @@ void matrix_zero(double *m, int rows, int cols){
     #pragma omp parallel for private (row, col) shared (v0) schedule (static)
     for (row = 0; row < rows; row++) {
         for(col = 0; col < cols - cols % 8; col+=8) {
-            _mm512_store_pd(&m[row * cols + col], v0);
+            _mm512_storeu_pd(&m[row * cols + col], v0);
         }
         
         for(; col < cols; col++)
@@ -202,10 +202,10 @@ void matrix_mul_dot(double *c, double *a, double *b, int rows, int cols){
     #pragma omp parallel for private (row, col, va, vb, vc) schedule (static)
     for (row = 0; row < rows; row++) {
         for(col = 0; col < cols - cols % 8; col+=8) {
-            va = _mm512_load_pd(&a[row*cols + col]);
-            vb = _mm512_load_pd(&b[row*cols + col]);
+            va = _mm512_loadu_pd(&a[row*cols + col]);
+            vb = _mm512_loadu_pd(&b[row*cols + col]);
             vc = _mm512_mul_pd(va, vb);
-            _mm512_store_pd(&c[row*cols + col], vc);
+            _mm512_storeu_pd(&c[row*cols + col], vc);
         }
 
         for(; col < cols; col++)
@@ -226,8 +226,8 @@ double *matrix_transpose(double *m, int rows, int cols){
     #pragma omp parallel for private (i, j, vm) schedule (static)
     for (i = 0; i < rows; i++){
         for (j = 0; j < cols - cols % 8; j+=8) {
-            vm = _mm512_load_pd(&m[i*cols + j]);
-            _mm512_store_pd(&m_tr[j*rows + i], vm);
+            vm = _mm512_loadu_pd(&m[i*cols + j]);
+            _mm512_storeu_pd(&m_tr[j*rows + i], vm);
         }
         
         for(; j < cols; j++)
@@ -258,7 +258,7 @@ void matrix_mul(double *c, double *a, double *b, int a_rows, int a_cols, int b_r
             vc = _mm512_setzero_pd();
 
             for (i = 0; i < a_cols - a_cols % 8; i+=8) {
-                va = _mm512_load_pd(&a[a_cols * row + i]);
+                va = _mm512_loadu_pd(&a[a_cols * row + i]);
                 vb = _mm512_i32gather_pd(v_idx, &b[b_cols * i + col], 8);
                 vc = _mm512_fmadd_pd(va, vb, vc);
             }
@@ -292,7 +292,7 @@ void matrix_mul_add(double *c, double *a, double *b, int a_rows, int a_cols, int
             vc = _mm512_setzero_pd();
 
             for (i = 0; i < a_cols - a_cols % 8; i+=8) {
-                va = _mm512_load_pd(&a[a_cols * row + i]);
+                va = _mm512_loadu_pd(&a[a_cols * row + i]);
                 vb = _mm512_i32gather_pd(v_idx, &b[b_cols * i + col], 8);
                 vc = _mm512_fmadd_pd(va, vb, vc);
             }
