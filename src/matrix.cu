@@ -18,20 +18,24 @@
 
 
 
-double **alloc_matrix_2v(int n_layers, int *size, int *size_prev, double (*init_weight_ptr)(void)){
+double **cuda_alloc_matrix_2v(int n_layers, int *size, int *size_prev, double (*init_weight_ptr)(void)){
 
     double **m;
     int i, j;
 
-    if ((m = (double**)malloc(n_layers * sizeof(double*))) == NULL) {
-        return(NULL);
-    }
+    cudaError_t malloc_call;
+    malloc_call = cudaMalloc(&m, n_layers * sizeof(double*));
+    
+    if (malloc_call != cudaSuccess)
+        return NULL;
 
-    for (i = 0; i < n_layers; i++)
-        if ((m[i] = (double*)malloc(size[i] * size_prev[i] * sizeof(double))) == NULL) {
-            matrix_free_2D(m, n_layers);
-            return(NULL);
+    for (i = 0; i < n_layers; i++){
+	malloc_call = cudaMalloc(&m[i], size[i] * size_prev[i] * sizeof(double));
+        if (malloc_call != cudaSuccess) {
+            cuda_matrix_free_2D(m, n_layers);
+            return NULL;
         }
+    }
 
     for (i = 0; i < n_layers; i++){
         for (j = 0; j < size[i] * size_prev[i]; j++){
@@ -42,20 +46,24 @@ double **alloc_matrix_2v(int n_layers, int *size, int *size_prev, double (*init_
     return(m);
 }
 
-double **alloc_matrix_1v(int n_layers, int *size, double (*init_weight_ptr)(void)){
+double **cuda_alloc_matrix_1v(int n_layers, int *size, double (*init_weight_ptr)(void)){
 
     double **m;
     int i, j;
 
-    if ((m = (double**)malloc(n_layers * sizeof(double*))) == NULL) {
-        return(NULL);
-    }
+    cudaError_t malloc_call;
+    malloc_call = cudaMalloc(&m, n_layers * sizeof(double*));
+    
+    if (malloc_call != cudaSuccess)
+        return NULL;
 
-    for (i = 0; i < n_layers; i++)
-        if ((m[i] = (double*)malloc(size[i] * sizeof(double))) == NULL) {
-            matrix_free_2D(m, n_layers);
-            return(NULL);
+    for (i = 0; i < n_layers; i++){
+        malloc_call = cudaMalloc(&m[idx], size[idx] * sizeof(double));
+        if (malloc_call != cudaSuccess) {
+            cuda_matrix_free_2D(m, n_layers);
+            return NULL;
         }
+    }
 
     for (i = 0; i < n_layers; i++){
         for (j = 0; j < size[i]; j++){
@@ -66,14 +74,16 @@ double **alloc_matrix_1v(int n_layers, int *size, double (*init_weight_ptr)(void
     return(m);
 }
 
-double *alloc_array(int length){
+double *cuda_alloc_array(int length){
 
     double *v;
     int i;
 
-    if ((v = (double*)malloc(length* sizeof(double))) == NULL) {
-        return(NULL);
-    }
+    cudaError_t malloc_call;
+    malloc_call = cudaMalloc(&v, length * sizeof(double));
+    
+    if (malloc_call != cudaSuccess)
+        return NULL;
 
     for (i = 0; i < length; i++){
         v[i] = 0.0;
@@ -83,14 +93,16 @@ double *alloc_array(int length){
 }
 
 
-double *alloc_matrix(int rows, int cols){
+double *cuda_alloc_matrix(int rows, int cols){
 
     double *m;
     int i;
 
-    if ((m = (double*)malloc(rows * cols * sizeof(double))) == NULL) {
-        return(NULL);
-    }
+    cudaError_t malloc_call;
+    malloc_call = cudaMalloc(&m, rows * cols * sizeof(double));
+    
+    if (malloc_call != cudaSuccess)
+        return NULL;
 
     for (i = 0; i < rows * cols; i++){
         m[i] = 0.0;
@@ -100,22 +112,22 @@ double *alloc_matrix(int rows, int cols){
 }
 
 
-void matrix_free_2D(double **m, int n_layers){
+void cuda_matrix_free_2D(double **m, int n_layers){
 
     int i;
 
     for (i = 0; i < n_layers; ++i) {
         if (m[i] != NULL) {
-            free(m[i]);
+            cudaFree(m[i]);
         }
     }
-    free(m);
+    cudaFree(m);
 }
 
-void matrix_free(double *m){
+void cuda_matrix_free(double *m){
 
     if (m != NULL)
-        free(m);
+        cudaFree(m);
 }
 
 
