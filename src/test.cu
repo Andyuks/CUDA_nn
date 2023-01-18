@@ -8,14 +8,12 @@ void cuda_forward_pass_test(nn_t *nn, double *input, double **A){
 
     int i;
 	int thr_per_blk, blk_in_grid;
-
-    int N= 100; // TODO BORRAR, TEMPORAL PARA COMPILACION PARA MIRAR ERRORES
 	
 	// Set execution configuration parameters
     //      thr_per_blk: number of CUDA threads per grid block
     //      blk_in_grid: number of blocks in grid
     thr_per_blk = THR_PER_BLOCK;
-    blk_in_grid = ceil( (float)N / thr_per_blk );
+    blk_in_grid = ceil( (float)batches / thr_per_blk );
 
     for(i = 0; i < nn->layers_size[0]; i++){
         A[0][i] = input[i];
