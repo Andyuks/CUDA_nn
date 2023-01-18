@@ -165,7 +165,7 @@ double back_prop(nn_t *nn, double *output, double **A, double **Z, double **D, d
     //cuda_matrix_sum(d[n_l - 2], d[n_l - 2], E[n_l - 2], l_s[n_l - 1], 1);
 
     for (i = n_l - 2; i > 0; i--) {
-		T = cuda_matrix_transposecuda_vec_prod<<<blk_in_grid, thr_per_blk>>>(nn->WH[i], l_s[i + 1], l_s[i]);
+		T = cuda_matrix_transpose<<<blk_in_grid, thr_per_blk>>>(nn->WH[i], l_s[i + 1], l_s[i]);
 		cuda_matrix_mul<<<blk_in_grid, thr_per_blk>>>(E[i - 1], T, E[i], l_s[i], l_s[i + 1], l_s[i + 1], 1);
 		cuda_matrix_free<<<blk_in_grid, thr_per_blk>>>(T);
         //T = cuda_matrix_transpose(nn->WH[i], l_s[i + 1], l_s[i]);
