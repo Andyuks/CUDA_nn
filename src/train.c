@@ -1,7 +1,5 @@
-
-#ifdef CPU
-
 #include "train.h"
+#ifdef CPU
 #include "matrix.h"
 
 void forward_pass(nn_t *nn, double *input, double **A, double **Z){
@@ -88,12 +86,7 @@ void update(nn_t *nn, double **D, double **d, double lr, int batch_size){
 
 #endif
 
-
-
-
 #ifdef GPU
-
-#include "train.h"
 #include "matrix.cuh"
 
 void forward_pass(nn_t *nn, double *input, double **A, double **Z){
