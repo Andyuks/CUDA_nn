@@ -48,8 +48,7 @@ double back_prop(nn_t *nn, double *output, double **A, double **Z, double **D, d
     matrix_sum(D[n_l - 2], D[n_l - 2], D_aux[n_l - 2], l_s[n_l - 1], l_s[n_l - 2]);
     matrix_sum(d[n_l - 2], d[n_l - 2], E[n_l - 2], l_s[n_l - 1], 1);
 
-    //WAR dist 1??
-    #pragma omp parallel for private (i) schedule (static)
+    //RAW dist 1: backwards
     for (i = n_l - 2; i > 0; i--) {
             
         T = matrix_transpose(nn->WH[i], l_s[i + 1], l_s[i]);
