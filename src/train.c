@@ -190,7 +190,7 @@ void update(nn_t *nn, double **D, double **d, double lr, int batch_size){
     //      thr_per_blk: number of CUDA threads per grid block
     //      blk_in_grid: number of blocks in grid
     thr_per_blk = THR_PER_BLOCK;
-    blk_in_grid = ceil( (float)N / thr_per_blk );
+    blk_in_grid = ceil( (float)batch_size / thr_per_blk );
 	
     for(i = 0; i < nn->n_layers - 1; i++){
 		cuda_matrix_mul_cnt<<<blk_in_grid, thr_per_blk>>>(D[i], nn->layers_size[i + 1], nn->layers_size[i],  lr * (1.0 / batch_size));
