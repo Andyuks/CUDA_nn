@@ -1,10 +1,9 @@
 #ifndef __TRAIN_H
 #define __TRAIN_H
-
+#include <omp.h>
 #include "nn.h"
 #include "nn_aux.h"
 #include "ds.h"
-#include "matrix.h"
 #include "matrix_common.h"
 
 void forward_pass(nn_t *nn, double *input, double **A, double **Z);
