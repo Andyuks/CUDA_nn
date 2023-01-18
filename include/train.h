@@ -3,7 +3,6 @@
 #include "nn.h"
 #include "nn_aux.h"
 #include "ds.h"
-#include "matrix_common.h"
 
 void forward_pass(nn_t *nn, double *input, double **A, double **Z);
 
