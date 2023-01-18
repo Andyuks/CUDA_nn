@@ -267,8 +267,6 @@ __global__ void cuda_matrix_mul_add(double *C, double *A, double *B, int a_rows,
 }
 
 
-
-
 /* GPU:  apply fun to matrix */
 __global__ void cuda_matrix_func(double *A, double *B, int rows, int cols, double (*func)(double)) {
 	int idx = threadIdx.x + blockIdx.x * blockDim.x; 
@@ -290,4 +288,3 @@ void print_matrix(double *m, int m_rows, int m_cols)
     }
     printf("\n");
 }
-
