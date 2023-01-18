@@ -17,117 +17,105 @@
 
 
 
-/* GPU: alloc matrix 2V*/
-double **cuda_alloc_matrix_2v(int n_layers, int *size, int *size_prev, double (*init_weight_ptr)(void)){
+
+double **alloc_matrix_2v(int n_layers, int *size, int *size_prev, double (*init_weight_ptr)(void)){
+
     double **m;
-    int idx = threadIdx.x + blockIdx.x * blockDim.x;
+    int i, j;
 
-    cudaError_t malloc_call;
-    malloc_call = cudaMalloc(&m, n_layers * sizeof(double*));
-    
-    if (malloc_call != cudaSuccess)
-        return NULL;
+    if ((m = (double**)malloc(n_layers * sizeof(double*))) == NULL) {
+        return(NULL);
+    }
 
-    if(idx < n_layers) {
-        malloc_call = cudaMalloc(&m[idx], size[idx] * size_prev[idx] * sizeof(double));
-        if (malloc_call != cudaSuccess) {
-            cuda_matrix_free_2D(m, n_layers);
-            return NULL;
+    for (i = 0; i < n_layers; i++)
+        if ((m[i] = (double*)malloc(size[i] * size_prev[i] * sizeof(double))) == NULL) {
+            matrix_free_2D(m, n_layers);
+            return(NULL);
+        }
+
+    for (i = 0; i < n_layers; i++){
+        for (j = 0; j < size[i] * size_prev[i]; j++){
+            m[i][j] = init_weight_ptr();
         }
     }
-    
-    if(idx < (n_layers * size[idx] * size_prev[idx])) 
-		(*m)[idx] = init_weight_ptr();
-       
-    return m;
-    
+
+    return(m);
 }
 
+double **alloc_matrix_1v(int n_layers, int *size, double (*init_weight_ptr)(void)){
 
-/* GPU: alloc matrix 1V*/
-double **cuda_alloc_matrix_1v(int n_layers, int *size, double (*init_weight_ptr)(void)) {
     double **m;
-    int idx = threadIdx.x + blockIdx.x * blockDim.x;
+    int i, j;
 
-    cudaError_t malloc_call;
-    malloc_call = cudaMalloc(&m, n_layers * sizeof(double*));
-    
-    if (malloc_call != cudaSuccess)
-        return NULL;
+    if ((m = (double**)malloc(n_layers * sizeof(double*))) == NULL) {
+        return(NULL);
+    }
 
-    if(idx < n_layers) {
-        malloc_call = cudaMalloc(&m[idx], size[idx] * sizeof(double));
-        if (malloc_call != cudaSuccess) {
-            cuda_matrix_free_2D(m, n_layers);
-            return NULL;
+    for (i = 0; i < n_layers; i++)
+        if ((m[i] = (double*)malloc(size[i] * sizeof(double))) == NULL) {
+            matrix_free_2D(m, n_layers);
+            return(NULL);
+        }
+
+    for (i = 0; i < n_layers; i++){
+        for (j = 0; j < size[i]; j++){
+            m[i][j] = init_weight_ptr();
         }
     }
-    
-    if(idx < (n_layers * size[idx])) 
-		(*m)[idx] = init_weight_ptr();
-       
-    return m;
+
+    return(m);
 }
 
-
-/* GPU: alloc array */
-double *cuda_alloc_array(int length) {
+double *alloc_array(int length){
 
     double *v;
-    int idx = threadIdx.x + blockIdx.x * blockDim.x; 
+    int i;
 
-    cudaError_t malloc_call;
-    malloc_call = cudaMalloc(&v, length * sizeof(double));
-    
-    if (malloc_call != cudaSuccess)
-        return NULL;
+    if ((v = (double*)malloc(length* sizeof(double))) == NULL) {
+        return(NULL);
+    }
 
-    if(idx < length)
-        v[idx] = 0.0;
+    for (i = 0; i < length; i++){
+        v[i] = 0.0;
+    }
     
     return(v);
 }
 
 
-
-
-/* GPU: alloc matrix */
-double *cuda_alloc_matrix(int rows, int cols) {
+double *alloc_matrix(int rows, int cols){
 
     double *m;
-    int idx = blockIdx.x * blockDim.x + threadIdx.x;
+    int i;
 
-    cudaError_t malloc_call;
-    malloc_call = cudaMalloc(&m, rows * cols * sizeof(double));
-    
-    if (malloc_call != cudaSuccess)
-        return NULL;
+    if ((m = (double*)malloc(rows * cols * sizeof(double))) == NULL) {
+        return(NULL);
+    }
 
-    if(idx < (rows * cols))
-        m[idx] = 0.0;
+    for (i = 0; i < rows * cols; i++){
+        m[i] = 0.0;
+    }
     
     return(m);
 }
 
 
+void matrix_free_2D(double **m, int n_layers){
 
-/* GPU: matrix free 2D */
-void matrix_free_2D(double **m, int n_layers) {
-    int idx = threadIdx.x + blockIdx.x * blockDim.x;
+    int i;
 
-	if(idx < n_layers)
-        if (m[idx] != NULL)
-            cudaFree(m[idx]);
-
-    cudaFree(m);
+    for (i = 0; i < n_layers; ++i) {
+        if (m[i] != NULL) {
+            free(m[i]);
+        }
+    }
+    free(m);
 }
 
-
-/* GPU: matrix free */
-void cuda_matrix_free(double *m){
+void matrix_free(double *m){
 
     if (m != NULL)
-        cudaFree(m);
+        free(m);
 }
 
 
@@ -184,8 +172,8 @@ __global__ void cuda_matrix_mul_dot(double *C, double *A, double *B, int rows, i
 		C[idx] = A[idx] * B[idx];
 }
 
-/* GPU: matrix transpose (OPERATIONS)*/
-__global__ double * cuda_matrix_transpose_op(double * m, double * m_tr, int rows, int cols) {
+/* GPU: matrix transpose */
+__global__ double * cuda_matrix_transpose(double * m, double * m_tr, int rows, int cols) {
 
 	idx = threadIdx.x + blockIdx.x * blockDim.x;
 	i = idx / cols;
@@ -195,24 +183,6 @@ __global__ double * cuda_matrix_transpose_op(double * m, double * m_tr, int rows
     return(m_tr);
 }
 
-/* GPU: matrix transpose */
-double * cuda_matrix_transpose(double * m, int rows, int cols, size_t N) {
-    double *m_tr;
-    
-    // Allocate memory in Host (CPU)
-    cudaError_t malloc_call;
-    malloc_call = cudaMallocHost(&m_tr, rows * cols * sizeof(double));
-    
-    if (malloc_call != cudaSuccess)
-        return NULL;
-
-    // Division of function due to illegal malloc call inside global function
-    int thr_per_blk = THR_PER_BLOCK;
-    int blk_in_grid = ceil( (float)N / thr_per_blk );
-
-	cuda_matrix_transpose_op <<<blk_in_grid, thr_per_blk>>>(m, m_tr, rows, cols);
-    return(m_tr);
-}
 
 /* GPU: cuda matrix mul */
 __global__ void cuda_matrix_mul(double *C, double *A, double *B, int a_rows, int a_cols, int b_rows, int b_cols) {
@@ -288,7 +258,7 @@ __global__ void cuda_matrix_mul_add(double *C, double *A, double *B, int a_rows,
 
 
 /* GPU:  apply fun to matrix */
-__global__ void cuda_matrix_func (double *A, double *B, int rows, int cols, double (*func)(double)) {
+__global__ void cuda_matrix_func(double *A, double *B, int rows, int cols, double (*func)(double)) {
 	int idx = threadIdx.x + blockIdx.x * blockDim.x; 
 	if(idx < (rows * cols)) /*ensure threads not outside dim*/
 		A[idx] = func(B[idx]);
