@@ -1,7 +1,8 @@
-#include <omp.h>
+
 #ifdef CPU
 
 #include "train.h"
+#include "matrix.h"
 
 void forward_pass(nn_t *nn, double *input, double **A, double **Z){
 
