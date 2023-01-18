@@ -99,6 +99,13 @@ void update(nn_t *nn, double **D, double **d, double lr, int batch_size){
 void forward_pass(nn_t *nn, double *input, double **A, double **Z){
 
     int i;
+	int thr_per_blk, blk_in_grid;
+	
+	// Set execution configuration parameters
+    //      thr_per_blk: number of CUDA threads per grid block
+    //      blk_in_grid: number of blocks in grid
+    thr_per_blk = THR_PER_BLOCK;
+    blk_in_grid = ceil( (float)N / thr_per_blk );
 
     for(i = 0; i < nn->layers_size[0]; i++){
         A[0][i] = input[i];
