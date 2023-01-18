@@ -104,7 +104,7 @@ void forward_pass(nn_t *nn, double *input, double **A, double **Z){
     //      thr_per_blk: number of CUDA threads per grid block
     //      blk_in_grid: number of blocks in grid
     thr_per_blk = THR_PER_BLOCK;
-    blk_in_grid = ceil( (float)N / thr_per_blk );
+    blk_in_grid = ceil( (float)N / thr_per_blk ); // TODO reemplazar N
 
     for(i = 0; i < nn->layers_size[0]; i++){
         A[0][i] = input[i];
@@ -139,10 +139,8 @@ double back_prop(nn_t *nn, double *output, double **A, double **Z, double **D, d
     n_l = nn->n_layers;
     l_s = nn->layers_size;
 
-	D_aux = cuda_alloc_matrix_2v<<<blk_in_grid, thr_per_blk>>>(n_l - 1, &(l_s[1]), &(l_s[0]), init_zero);
-	E =  cuda_alloc_matrix_1v<<<blk_in_grid, thr_per_blk>>>(n_l - 1, &(l_s[1]), init_zero);
-    //D_aux = cuda_alloc_matrix_2v(n_l - 1, &(l_s[1]), &(l_s[0]), init_zero);
-    //E = cuda_alloc_matrix_1v(n_l - 1, &(l_s[1]), init_zero);
+	D_aux = cuda_alloc_matrix_2v(n_l - 1, &(l_s[1]), &(l_s[0]), init_zero);
+	E =  cuda_alloc_matrix_1v(n_l - 1, &(l_s[1]), init_zero);
 
     loss = nn->loss(A[n_l - 1], output, l_s[n_l - 1]);
 
@@ -151,13 +149,12 @@ double back_prop(nn_t *nn, double *output, double **A, double **Z, double **D, d
     //cuda_matrix_sub(E[n_l - 2], A[n_l - 1], output, l_s[n_l - 1], 1);
     //cuda_matrix_mul_dot(E[n_l - 2], E[n_l - 2], Z[n_l - 1], l_s[n_l - 1], 1);  
     
-    T = cuda_alloc_matrix<<<blk_in_grid, thr_per_blk>>>(l_s[n_l - 2], 1); // aux para reservar memoria fuera de kernel
+    T = cuda_alloc_matrix(l_s[n_l - 2], 1); // aux para reservar memoria fuera de kernel
     cuda_matrix_transpose<<<blk_in_grid, thr_per_blk>>>(A[n_l - 2], T, l_s[n_l - 2], 1);
     cuda_matrix_mul<<<blk_in_grid, thr_per_blk>>>(D_aux[n_l - 2], E[n_l - 2], T, l_s[n_l - 1], 1, 1, l_s[n_l - 2]);
-    cuda_matrix_free<<<blk_in_grid, thr_per_blk>>>(T);
     //T = cuda_matrix_transpose(A[n_l - 2], l_s[n_l - 2], 1); 
     //cuda_matrix_mul(D_aux[n_l - 2], E[n_l - 2], T, l_s[n_l - 1], 1, 1, l_s[n_l - 2]);
-    //cuda_matrix_free(T);
+    cuda_matrix_free(T);
 
     cuda_matrix_sum<<<blk_in_grid, thr_per_blk>>>(D[n_l - 2], D[n_l - 2], D_aux[n_l - 2], l_s[n_l - 1], l_s[n_l - 2]);
     cuda_matrix_sum<<<blk_in_grid, thr_per_blk>>>(d[n_l - 2], d[n_l - 2], E[n_l - 2], l_s[n_l - 1], 1);
@@ -165,13 +162,12 @@ double back_prop(nn_t *nn, double *output, double **A, double **Z, double **D, d
     //cuda_matrix_sum(d[n_l - 2], d[n_l - 2], E[n_l - 2], l_s[n_l - 1], 1);
 
     for (i = n_l - 2; i > 0; i--) {
-        T = cuda_alloc_matrix<<<blk_in_grid, thr_per_blk>>>(l_s[i + 1], l_s[i]); // aux para reservar memoria fuera de kernel
+        T = cuda_alloc_matrix(l_s[i + 1], l_s[i]); // aux para reservar memoria fuera de kernel
 		cuda_matrix_transpose<<<blk_in_grid, thr_per_blk>>>(nn->WH[i], T, l_s[i + 1], l_s[i]);
 		cuda_matrix_mul<<<blk_in_grid, thr_per_blk>>>(E[i - 1], T, E[i], l_s[i], l_s[i + 1], l_s[i + 1], 1);
-		cuda_matrix_free<<<blk_in_grid, thr_per_blk>>>(T);
         //T = cuda_matrix_transpose(nn->WH[i], l_s[i + 1], l_s[i]);
         //cuda_matrix_mul(E[i - 1], T, E[i], l_s[i], l_s[i + 1], l_s[i + 1], 1);
-        //cuda_matrix_free(T);
+        cuda_matrix_free(T);
 
 		cuda_matrix_mul_dot<<<blk_in_grid, thr_per_blk>>>(E[i - 1], E[i - 1], Z[i], l_s[i], 1);
         //cuda_matrix_mul_dot(E[i - 1], E[i - 1], Z[i], l_s[i], 1);
@@ -184,10 +180,8 @@ double back_prop(nn_t *nn, double *output, double **A, double **Z, double **D, d
         //cuda_matrix_sum(D[i - 1], D[i - 1], D_aux[i - 1], l_s[i], l_s[i - 1]);
         //cuda_matrix_sum(d[i - 1], d[i - 1], E[i - 1], l_s[i], 1);
     }
-	cuda_matrix_free_2D<<<blk_in_grid, thr_per_blk>>>(D_aux, n_l - 1);
-    cuda_matrix_free_2D<<<blk_in_grid, thr_per_blk>>>(E, n_l - 1);
-    //cuda_matrix_free_2D(D_aux, n_l - 1);
-    //cuda_matrix_free_2D(E, n_l - 1);
+    cuda_matrix_free_2D(D_aux, n_l - 1);
+    cuda_matrix_free_2D(E, n_l - 1);
 
     return(loss);
 
