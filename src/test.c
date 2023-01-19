@@ -7,7 +7,7 @@ void forward_pass_test(nn_t *nn, double *input, double **A){
 
     int i;
 
-    #pragma omp parallel for private (i) schedule (static)
+    //#pragma omp parallel for private (i) schedule (static) // ganancia insignificante
     for(i = 0; i < nn->layers_size[0]; i++){
         A[0][i] = input[i];
     }
@@ -29,7 +29,7 @@ void forward_pass_test(nn_t *nn, double *input, double **A){
 
 float precision(int tp, int fp){
 
-    float precision = 0.0;
+    float precision = tp/(tp+fp);
 
     return(precision);
 
@@ -37,7 +37,7 @@ float precision(int tp, int fp){
 
 float recall(int tp, int fn){
 
-    float recall = 0.0;
+    float recall = tp/(tp+fn);
 
     return(recall);
 
@@ -45,7 +45,7 @@ float recall(int tp, int fn){
 
 float f1(float p, float r){
 
-    float f1 = 0.0;
+    float f1 = 2*((p*r)/(p+r));
 
     return(f1);
 }
