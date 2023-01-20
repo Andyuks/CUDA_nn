@@ -5,10 +5,7 @@
 #include "utils.h"
 #include "nn_aux.h"
 #include "ds.h"
-
-#ifdef CPU
 #include "globals.h"
-#endif
 
 int seed;
 int train_mode;;
@@ -22,7 +19,6 @@ int *layers;
 char dataset[100];
 char scaling[50];
 char model[100];
-
 
 char *strremove(char *str, const char *sub) {
     char *p, *q, *r;
