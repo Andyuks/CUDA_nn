@@ -2,16 +2,11 @@
 #include <stdlib.h>
 #include <math.h>
 #include "ds.h"
-#include "nn.h"
 #include "utils.h"
 
-#ifdef CPU
 #include "globals.h"
-#endif
-
-#ifdef GPU
-#include "globals.cuh"
-#endif
+#include "nn.h"
+#include "globals_gpu.cuh"
 
 int main(int argc, char **argv) {
 

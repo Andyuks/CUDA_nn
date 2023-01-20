@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
+#include <math.h>
 #include "nn_aux.h"
 
 #ifdef TIMING
@@ -11,11 +12,11 @@
     #include "utils.h"
 #endif
 
-#include "matrix.cuh"
-#include "globals.cuh"
+#include "matrix_gpu.cuh"
+#include "globals_gpu.cuh"
 
 
-
+int thr_per_blk, blk_in_grid;
 
 
 double **cuda_alloc_matrix_2v(int n_layers, int *size, int *size_prev, double (*init_weight_ptr)(void)){
@@ -135,7 +136,7 @@ void cuda_matrix_free(double *m){
 /* operations */ 
 
 /* GPU: addition of matrix */
-__global__ void cuda_matrix_sum(double *C, double *A, double *B, int rows, int cols) {
+__global__ void kcuda_matrix_sum(double *C, double *A, double *B, int rows, int cols) {
 	int idx = threadIdx.x + blockIdx.x * blockDim.x; 
 	if(idx < (rows * cols)) /*ensure threads not outside dim*/
 		C[idx] = A[idx] + B[idx];
@@ -144,7 +145,7 @@ __global__ void cuda_matrix_sum(double *C, double *A, double *B, int rows, int c
 
 
 /* GPU: substraction of matrix  */
-__global__ void cuda_matrix_sub(double *C, double *A, double *B, int rows, int cols) {
+__global__ void kcuda_matrix_sub(double *C, double *A, double *B, int rows, int cols) {
 	int idx = threadIdx.x + blockIdx.x * blockDim.x; 
 	if(idx < (rows * cols)) /*ensure threads not outside dim*/
 		C[idx] = A[idx] - B[idx];
@@ -153,7 +154,7 @@ __global__ void cuda_matrix_sub(double *C, double *A, double *B, int rows, int c
 
 
 /* GPU:  mul cnt  */
-__global__ void cuda_matrix_mul_cnt(double *m, int rows, int cols, double cnt) {
+__global__ void kcuda_matrix_mul_cnt(double *m, int rows, int cols, double cnt) {
 	int idx = threadIdx.x + blockIdx.x * blockDim.x; 
 	if(idx < (rows * cols)) /*ensure threads not outside dim*/
 		m[idx] *= cnt;
@@ -162,7 +163,7 @@ __global__ void cuda_matrix_mul_cnt(double *m, int rows, int cols, double cnt) {
 
 
 /* GPU:  zero  */
-__global__ void cuda_matrix_zero(double *m, int rows, int cols) {
+__global__ void kcuda_matrix_zero(double *m, int rows, int cols) {
 	int idx = threadIdx.x + blockIdx.x * blockDim.x; 
 	if(idx < (rows * cols)) /*ensure threads not outside dim*/
 		m[idx] = 0.0;
@@ -171,14 +172,14 @@ __global__ void cuda_matrix_zero(double *m, int rows, int cols) {
 
 
 /* GPU: cuda matrix mul dot  */
-__global__ void cuda_matrix_mul_dot(double *C, double *A, double *B, int rows, int cols) {
+__global__ void kcuda_matrix_mul_dot(double *C, double *A, double *B, int rows, int cols) {
 	int idx = threadIdx.x + blockIdx.x * blockDim.x; 
 	if(idx < (rows * cols)) /*ensure threads not outside dim*/
 		C[idx] = A[idx] * B[idx];
 }
 
 /* GPU: matrix transpose */
-__global__ void cuda_matrix_transpose(double * m, double * m_tr, int rows, int cols) {
+__global__ void kcuda_matrix_transpose(double * m, double * m_tr, int rows, int cols) {
 
 	int idx = threadIdx.x + blockIdx.x * blockDim.x;
 	int i = idx / cols;
@@ -189,7 +190,7 @@ __global__ void cuda_matrix_transpose(double * m, double * m_tr, int rows, int c
 
 
 /* GPU: cuda matrix mul */
-__global__ void cuda_matrix_mul(double *C, double *A, double *B, int a_rows, int a_cols, int b_rows, int b_cols) {
+__global__ void kcuda_matrix_mul(double *C, double *A, double *B, int a_rows, int a_cols, int b_rows, int b_cols) {
 	assert(a_cols == b_rows);
     double sum = 0.0;
     int i;
@@ -211,43 +212,6 @@ __global__ void cuda_matrix_mul(double *C, double *A, double *B, int a_rows, int
         if(threadIdx.x == 0) {
             for(i = 0; i < THR_PER_BLOCK; i++) // TODO: mirar si optimizar op cambiando THR_PER_BLOCK
                 sum += c_aux[i];
-            atomicAdd(C, sum);
-        }
-    }
-	
-#ifdef TIMING
-    res_time = clock_gettime(clk_id, &t2);
-    printf("Matrix mul execution time: %ld us \n", diff_time(t2, t1));
-#endif
-}
-
-
-
-/* matrix multiplication add */
-
-__global__ void cuda_matrix_mul_add(double *C, double *A, double *B, int a_rows, int a_cols, int b_rows, int b_cols, double *D) {
-	assert(a_cols == b_rows);
-    double sum = 0.0;
-    int i;
-    int idx = blockIdx.x * blockDim.x + threadIdx.x;
-    __shared__ double c_aux[THR_PER_BLOCK];
-    
-#ifdef TIMING
-    int res_time;
-    struct timespec t1, t2;
-    clockid_t clk_id = CLOCK_MONOTONIC;
-    res_time = clock_gettime(clk_id, &t1);
-#endif
-
-
-    if (idx < a_rows * b_cols) {
-        c_aux[threadIdx.x] = A[idx] * B[idx]; /* need index inside block */
-        __syncthreads();
-
-        if(threadIdx.x == 0) {
-            for(i = 0; i < THR_PER_BLOCK; i++) // TODO: mirar si optimizar op cambiando THR_PER_BLOCK
-                sum += c_aux[i];
-            sum += D[idx];
             atomicAdd(C, sum);
         }
     }
@@ -260,8 +224,69 @@ __global__ void cuda_matrix_mul_add(double *C, double *A, double *B, int a_rows,
 
 
 /* GPU:  apply fun to matrix */
-__global__ void cuda_matrix_func(double *A, double *B, int rows, int cols, double (*func)(double)) {
-	int idx = threadIdx.x + blockIdx.x * blockDim.x; 
-	if(idx < (rows * cols)) /*ensure threads not outside dim*/
-		A[idx] = func(B[idx]);
+// __global__ void kcuda_matrix_func(double *A, double *B, int rows, int cols, double (*func)(double)) {
+// 	int idx = threadIdx.x + blockIdx.x * blockDim.x; 
+// 	if(idx < (rows * cols)) /*ensure threads not outside dim*/
+// 		A[idx] = func(B[idx]);
+// }
+
+
+__global__ void kcuda_matrix_sigmoid(double *n, double *m, int m_rows, int m_cols){
+    //
+}
+
+///////////////////////////////////////////////////////////
+
+/* WRAPPER FUNCTIONS */
+
+void set_kernel_params() {
+    // Set execution configuration parameters
+    //      thr_per_blk: number of CUDA threads per grid block
+    //      blk_in_grid: number of blocks in grid
+    thr_per_blk = THR_PER_BLOCK;
+    blk_in_grid = ceil( (float)batches / thr_per_blk );
+}
+
+void cuda_matrix_sum(double *c, double *a, double *b, int rows, int cols) {
+    kcuda_matrix_sum<<<blk_in_grid, thr_per_blk>>>(c, a, b, rows, cols);
+}
+
+void cuda_matrix_sub(double *c, double *a, double *b, int rows, int cols){
+    kcuda_matrix_sub<<<blk_in_grid, thr_per_blk>>>(c, a, b, rows, cols);
+}
+
+void cuda_matrix_mul_cnt(double *m, int rows, int cols, double cnt){
+    kcuda_matrix_mul_cnt<<<blk_in_grid, thr_per_blk>>>(m, rows, cols, cnt);
+}
+
+void cuda_matrix_zero(double *m, int rows, int cols){
+    kcuda_matrix_zero<<<blk_in_grid, thr_per_blk>>>(m, rows, cols);
+}
+
+void cuda_matrix_mul_dot(double *c, double *a, double *b, int rows, int cols){
+    kcuda_matrix_mul_dot<<<blk_in_grid, thr_per_blk>>>(c, a, b, rows, cols);
+}
+
+double * cuda_matrix_transpose(double *m, int rows, int cols){
+    double *m_tr;
+    m_tr = cuda_alloc_matrix(rows, cols);
+    kcuda_matrix_transpose<<<blk_in_grid, thr_per_blk>>>(m, m_tr, rows, cols);
+    return m_tr;
+}
+
+void cuda_matrix_mul(double *c, double *a, double *b, int a_rows, int a_cols, int b_rows, int b_cols){
+    kcuda_matrix_mul<<<blk_in_grid, thr_per_blk>>>(c, a, b, a_rows, a_cols, b_rows, b_cols);
+}
+
+void cuda_matrix_mul_add(double *c, double *a, double *b, int a_rows, int a_cols, int b_rows, int b_cols, double* d){
+    double *c_aux;
+    c_aux = cuda_alloc_matrix(a_rows, b_cols);
+    kcuda_matrix_mul<<<blk_in_grid, thr_per_blk>>>(c_aux, a, b, a_rows, a_cols, b_rows, b_cols);
+    kcuda_matrix_sum<<<blk_in_grid, thr_per_blk>>>(c, c_aux, d, a_rows, b_cols);
+    cuda_matrix_free(c_aux);
+}
+
+void cuda_matrix_func(double *n, double *m, int m_rows, int m_cols, double (*func)(double)){
+    //kcuda_matrix_func<<<blk_in_grid, thr_per_blk>>>(n, m, m_rows, m_cols, func);
+    kcuda_matrix_sigmoid<<<blk_in_grid, thr_per_blk>>>(n, m, m_rows, m_cols);
 }

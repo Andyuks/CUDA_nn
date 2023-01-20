@@ -275,8 +275,7 @@ void matrix_mul(double *c, double *a, double *b, int a_rows, int a_cols, int b_r
 }
 
 void matrix_mul_add(double *c, double *a, double *b, int a_rows, int a_cols, int b_rows, int b_cols, double *d){
-
-
+/*
     assert(a_cols == b_rows);
 
     int i, col, row;
@@ -300,6 +299,7 @@ void matrix_mul_add(double *c, double *a, double *b, int a_rows, int a_cols, int
                  *m_elem(c, b_cols, row, col) += *m_elem(a, a_cols, row, i) * *m_elem(b, b_cols, i, col);
         }
     }
+    */
 }
 
 void matrix_func(double *n, double *m, int rows, int cols, double (*func)(double)) {

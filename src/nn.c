@@ -7,18 +7,17 @@
 #include "nn_aux.h"
 #include "utils.h"
 #include "train.h"
+#include "test.h"
 #include "matrix_common.h"
 
 #ifdef CPU
 #include "globals.h"
 #include "matrix.h"
-#include "test.h"
 #endif
 
 #ifdef GPU
-#include "globals.cuh"
-#include "matrix.cuh"
-#include "test.cuh"
+#include "globals_gpu.cuh"
+#include "matrix_gpu.cuh"
 #endif
 
 void init_nn(nn_t *nn, int n_layers, int *layers_size) {
@@ -35,10 +34,21 @@ void init_nn(nn_t *nn, int n_layers, int *layers_size) {
         nn->dactivation_ptr[i] = dSigmoid;
     }
     nn->loss = mse;
+
+    #ifdef CPU
     nn->BH = alloc_matrix_1v(n_layers - 1, &layers_size[1], nn->init_weight_ptr);
     nn->WH = alloc_matrix_2v(n_layers - 1, &layers_size[1], &layers_size[0], nn->init_weight_ptr);
+    #endif
+
+    #ifdef GPU
+    nn->BH = cuda_alloc_matrix_1v(n_layers - 1, &layers_size[1], nn->init_weight_ptr);
+    nn->WH = cuda_alloc_matrix_2v(n_layers - 1, &layers_size[1], &layers_size[0], nn->init_weight_ptr);
+    #endif
     
 }
+
+
+//////////////////////////////////////////////////////////////////////////////////////////
 
 #ifdef CPU
 
@@ -112,11 +122,10 @@ void test(nn_t *nn, ds_t *ds){
 
 #endif
 
-
-
-
+//////////////////////////////////////////////////////////////////////////////////////////
 
 #ifdef GPU
+
 void train(nn_t *nn, ds_t *ds, int epochs, int size_batch, double lr) {
     int i, n, x, n_batches, min_batch;
     double **A, **Z, **D, **d;;
@@ -152,7 +161,6 @@ void train(nn_t *nn, ds_t *ds, int epochs, int size_batch, double lr) {
             for(min_batch = (x * size_batch); min_batch < ((x + 1) * size_batch); min_batch++){
             
                 i = order[min_batch];
-				//cuda_forward_pass<<<blk_in_grid, thr_per_blk>>>(nn, &ds->inputs[i * ds->n_inputs], A, Z);
                 forward_pass(nn, &ds->inputs[i * ds->n_inputs], A, Z); 
                 loss += back_prop(nn, &ds->outputs[i * ds->n_outputs], A, Z, D, d);
             }
@@ -178,7 +186,7 @@ void test(nn_t *nn, ds_t *ds){
 
     for(i = 0; i < ds->n_samples; i++){
 
-        cuda_forward_pass_test(nn, &ds->inputs[i * ds->n_inputs], A);
+        forward_pass_test(nn, &ds->inputs[i * ds->n_inputs], A);
     }
 
     // Precision
@@ -189,10 +197,7 @@ void test(nn_t *nn, ds_t *ds){
 #endif
 
 
-
-
-
-
+//////////////////////////////////////////////////////////////////////////////////////////
 
 void print_nn(nn_t *nn){
 
@@ -297,4 +302,3 @@ void export_nn(nn_t *nn, char *filename){
     }
     fclose(fd);
 }
-

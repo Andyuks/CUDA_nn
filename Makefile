@@ -2,7 +2,7 @@
 CUDA_ROOT_DIR=/usr/local/cuda
 # CC compiler options:
 CC=g++
-CC_FLAGS=-Iinclude -MMD -MP -DCPU -Wall -fopenmp
+CC_FLAGS=-Iinclude -MMD -MP -DGPU -Wall -fopenmp
 CC_LIBS=-lm -g -mavx512f #-fopenmp
 # NVCC compiler options:
 NVCC=nvcc
@@ -34,7 +34,7 @@ BIN = $(BIN_DIR)/nn
 SRC_C := $(wildcard $(SRC_DIR)/*.c)
 SRC_CUDA := $(wildcard $(SRC_DIR)/*.cu)
 OBJS_C := $(SRC_C:$(SRC_DIR)/%.c=$(OBJ_DIR)/%.o)
-OBJS_CUDA := $(SRC_CUDA:$(SRC_DIR)/%.cu=$(OBJ_DIR)/%_cu.o)
+OBJS_CUDA := $(SRC_CUDA:$(SRC_DIR)/%.cu=$(OBJ_DIR)/%.o)
 
 .PHONY: all clean
 
@@ -50,7 +50,7 @@ $(OBJ_DIR)/%.o : $(SRC_DIR)/%.c | $(OBJ_DIR)
 	$(CC) $(CC_FLAGS) -c $< -o $@ $(CC_LIBS)
 
 # Compile CUDA source files to object files:
-$(OBJ_DIR)/%_cu.o : $(SRC_DIR)/%.cu | $(OBJ_DIR)
+$(OBJ_DIR)/%.o : $(SRC_DIR)/%.cu | $(OBJ_DIR)
 	$(NVCC) $(NVCC_FLAGS) -c $< -o $@ $(NVCC_LIBS)
 
 $(BIN_DIR) $(OBJ_DIR):
