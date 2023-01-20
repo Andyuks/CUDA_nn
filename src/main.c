@@ -3,10 +3,16 @@
 #include <math.h>
 #include "ds.h"
 #include "utils.h"
+#include "nn.h" // ambos CPU y GPU
 
+#ifdef CPU
 #include "globals.h"
-#include "nn.h"
+#endif
+
+#ifdef GPU
+#include "nn_gpu.cuh"
 #include "globals_gpu.cuh"
+#endif
 
 int main(int argc, char **argv) {
 

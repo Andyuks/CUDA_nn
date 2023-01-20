@@ -22,9 +22,11 @@ typedef struct nn_t{
    
 void init_nn(nn_t *nn, int n_layers, int *layers_size); 
 
+#ifdef CPU
 void train(nn_t *nn, ds_t *ds, int epochs, int batches, double lr);
 
 void test(nn_t *nn, ds_t *ds);
+#endif
 
 void import_nn(nn_t *nn, char *filename);
 

@@ -24,35 +24,7 @@ void forward_pass_test(nn_t *nn, double *input, double **A){
     }
 
 }
-
-
-
 //printf("Expected: %f , Obtained: %f Loss %f\n", output[0], A[nn->n_layers - 1][0], loss);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #endif
 
 
@@ -62,6 +34,7 @@ void forward_pass_test(nn_t *nn, double *input, double **A){
 
 #include "matrix_gpu.cuh"
 #include "globals_gpu.cuh"
+#include "nn_gpu.cuh"
 
 
 void forward_pass_test(nn_t *nn, double *input, double **A){
@@ -81,29 +54,22 @@ void forward_pass_test(nn_t *nn, double *input, double **A){
 
 #endif
 
+// Common functions
 
-
-// common funs
 float precision(int tp, int fp){
 
     float precision = tp/(tp+fp);
-
     return(precision);
-
 }
 
 float recall(int tp, int fn){
 
     float recall = tp/(tp+fn);
-
     return(recall);
-
 }
 
 float f1(float p, float r){
 
     float f1 = 2*((p*r)/(p+r));
-
     return(f1);
-
 }

@@ -19,8 +19,6 @@ extern char model[100];
 
 #endif
 
-
-
 #ifndef __GLOBALS_CUH
 #define __GLOBALS_CUH
 //#include <cuda_runtime.h>
@@ -29,6 +27,7 @@ extern char model[100];
 
 extern int thr_per_blk;
 extern int blk_in_grid;
+
 
 /*
 #define gpuErrchk(call)                                 \
