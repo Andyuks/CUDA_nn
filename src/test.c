@@ -4,7 +4,7 @@
 
 
 #ifdef CPU
-#include <omp.h>
+// #include <omp.h>
 #include "matrix.h"
     
 void forward_pass_test(nn_t *nn, double *input, double **A){
