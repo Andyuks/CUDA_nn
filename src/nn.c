@@ -119,7 +119,7 @@ void test(nn_t *nn, ds_t *ds){
 
         forward_pass_test(nn, &ds->inputs[i * ds->n_inputs], A);
     }
-result_management(nn, ds);
+result_management(nn, &ds->outputs[(n_batches-1) * ds->n_outputs], A);
     // Precision
     // Recall
     // F1
@@ -213,15 +213,29 @@ result_management(nn, ds);
 
 //////////////////////////////////////////////////////////////////////////////////////////
 
-void result_management(nn_t *nn, ds_t *ds)
+void result_management(nn_t *nn, double * output, double * A)
 {
 int i, tp, fp, fn, precision, recall, f1;
 
-for(i=0; i<; i++)
-{
+for(i = 0; i < length; i++){
 
+if (A[i] == 1  &&  output[i]==1)
+
+tp++;
+
+else if (A[i] == 1  &&  output[i]==0)
+
+fp ++;
+
+else if(A[i] == 0  &&  output[i]==1)
+
+fn ++!
 
 }
+
+
+
+
 
 precision = precision(tp, fp);    // Precision
 recall =  recall(tp, fn);   // Recall
