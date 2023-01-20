@@ -1,3 +1,4 @@
+#include <omp.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
@@ -115,21 +116,21 @@ void matrix_sum(double *c, double *a, double *b, int rows, int cols){
 
     int  col, row;
     double sum;
-
+#pragma omp parallel for private (row, col, sum) schedule (static)
     for (row = 0; row < rows; row++) {
         for(col = 0; col < cols; col++) {
             sum = *m_elem(a, cols, row, col) + *m_elem(b, cols, row, col);
             //printf("- %f %f %f \n ", *m_elem(a, cols, row, col), *m_elem(b, cols, row, col),sum);
             *m_elem(c, cols, row, col) = sum;
         }
-    }c[cols*row + col];
+    }
 }
 
 void matrix_sub(double *c, double *a, double *b, int rows, int cols){
 
     int col, row;
     double sum;
-
+#pragma omp parallel for private (row, col, sum) schedule (static)
     for (row = 0; row < rows; row++) {
         for(col = 0; col < cols; col++) {
             sum = *m_elem(a, cols, row, col) - *m_elem(b, cols, row, col);
@@ -141,7 +142,7 @@ void matrix_sub(double *c, double *a, double *b, int rows, int cols){
 void matrix_mul_cnt(double *m, int rows, int cols, double cnt){
 
     int col, row;
-
+#pragma omp parallel for private (row, col) schedule (static)
     for (row = 0; row < rows; row++) {
         for(col = 0; col < cols; col++) {
             *m_elem(m, cols, row, col) *= cnt;
@@ -152,7 +153,7 @@ void matrix_mul_cnt(double *m, int rows, int cols, double cnt){
 void matrix_zero(double *m, int rows, int cols){
 
     int col, row;
-
+#pragma omp parallel for private (row, col) schedule (static)
     for (row = 0; row < rows; row++) {
         for(col = 0; col < cols; col++) {
             *m_elem(m, cols, row, col) = 0.0;
@@ -164,7 +165,7 @@ void matrix_mul_dot(double *c, double *a, double *b, int rows, int cols){
 
     int col, row;
     double prod;
-
+#pragma omp parallel for private (row, col, prod) schedule (static)
     for (row = 0; row < rows; row++) {
         for(col = 0; col < cols; col++) {
             prod = *m_elem(a, cols, row, col) * *m_elem(b, cols, row, col);
@@ -182,7 +183,7 @@ double *matrix_transpose(double *m, int rows, int cols){
     if ((m_t = (double*)malloc(rows * cols * sizeof(double))) == NULL) {
         return(NULL);
     }
-
+#pragma omp parallel for private (i,j) schedule (static)
     for (i = 0; i < rows; i++){
         for (j = 0; j < cols; j++){
             *m_elem(m_t, rows, j, i) = *m_elem(m, cols, i, j);
@@ -205,7 +206,7 @@ void matrix_mul(double *c, double *a, double *b, int a_rows, int a_cols, int b_r
     clockid_t clk_id = CLOCK_MONOTONIC;
     res_time = clock_gettime(clk_id, &t1);
 #endif
-
+#pragma omp parallel for private (row, col, i,  sum) schedule (static)
     for (row = 0; row < a_rows; row++) {
         for(col = 0; col < b_cols; col++) {
             sum = 0.0;
@@ -228,7 +229,7 @@ void matrix_mul_add(double *c, double *a, double *b, int a_rows, int a_cols, int
 
     int i, col, row;
     double sum;
-
+#pragma omp parallel for private (row, col, i,  sum) schedule (static)
     for (row = 0; row < a_rows; row++) {
         for(col = 0; col < b_cols; col++) {
             sum = 0.0;
@@ -244,7 +245,7 @@ void matrix_mul_add(double *c, double *a, double *b, int a_rows, int a_cols, int
 void matrix_func(double *n, double *m, int rows, int cols, double (*func)(double)){
     
     int col, row;
-
+#pragma omp parallel for private (row, col) schedule (static)
     for (row = 0; row < rows; row++){
         for(col = 0; col < cols; col++){
             *m_elem(n, cols, row, col) = func(*m_elem(m, cols, row, col));
