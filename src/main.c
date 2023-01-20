@@ -1,17 +1,11 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <math.h>
 #include "ds.h"
 #include "utils.h"
 #include "nn.h" // ambos CPU y GPU
-
-#ifdef CPU
 #include "globals.h"
-#endif
 
-#ifdef GPU
-#include <math.h>
-//#include "nn_gpu.cuh"
-#include "globals_gpu.cuh"
 int thr_per_blk, blk_in_grid;
 
 void set_kernel_params() {
@@ -22,7 +16,6 @@ void set_kernel_params() {
     blk_in_grid = ceil( (float)batches / thr_per_blk );
 }
 
-#endif
 
 int main(int argc, char **argv) {
 

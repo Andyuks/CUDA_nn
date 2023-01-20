@@ -9,14 +9,13 @@
 #include "train.h"
 #include "test.h"
 #include "matrix_common.h"
+#include "globals.h"
 
 #ifdef CPU
-#include "globals.h"
 #include "matrix.h"
 #endif
 
 #ifdef GPU
-#include "globals_gpu.cuh"
 #include "matrix_gpu.cuh"
 #endif
 

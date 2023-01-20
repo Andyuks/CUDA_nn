@@ -13,7 +13,7 @@
 #include "matrix_common.h"
 
 #include "nn_gpu.cuh"
-#include "globals_gpu.cuh"
+#include "globals.h"
 #include "matrix_gpu.cuh"
 
 __global__ void cuda_train_batch(nn_t *nn, ds_t *ds, int size_batch, double lr, 

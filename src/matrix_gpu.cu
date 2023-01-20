@@ -13,7 +13,7 @@
 #endif
 
 #include "matrix_gpu.cuh"
-#include "globals_gpu.cuh"
+#include "globals.h"
 
 double **cuda_alloc_matrix_2v(int n_layers, int *size, int *size_prev, double (*init_weight_ptr)(void)){
 

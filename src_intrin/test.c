@@ -1,5 +1,6 @@
 #include "test.h"
 #include "nn.h"
+#include "globals.h"
 
 
 #ifdef CPU
@@ -33,7 +34,6 @@ void forward_pass_test(nn_t *nn, double *input, double **A){
 #ifdef GPU
 
 #include "matrix_gpu.cuh"
-#include "globals_gpu.cuh"
 //#include "nn_gpu.cuh"
 
 
