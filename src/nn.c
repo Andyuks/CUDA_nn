@@ -119,7 +119,8 @@ void test(nn_t *nn, ds_t *ds){
 
         forward_pass_test(nn, &ds->inputs[i * ds->n_inputs], A);
     }
-result_management(nn, &ds->outputs[(n_batches-1) * ds->n_outputs], A);
+
+	result_management( &ds->outputs[(n_batches-1) * ds->n_outputs], A[(n_batches-1) * ds->n_outputs], nn->layers_size[nn->n_layers - 1]);			
     // Precision
     // Recall
     // F1
@@ -205,7 +206,7 @@ void test(nn_t *nn, ds_t *ds){
 
         forward_pass_test(nn, &ds->inputs[i * ds->n_inputs], A);
     }
-result_management(nn, ds);
+result_management( &ds->outputs[(n_batches-1) * ds->n_outputs], A[(n_batches-1) * ds->n_outputs], nn->layers_size[nn->n_layers - 1]);
 }
 
 #endif
@@ -213,9 +214,10 @@ result_management(nn, ds);
 
 //////////////////////////////////////////////////////////////////////////////////////////
 
-void result_management(nn_t *nn, double * output, double * A)
+void result_management(double * output, double * A, int length)
 {
-int i, tp, fp, fn, precision, recall, f1;
+int i, tp, fp, fn;
+float precision, recall, f1;
 
 for(i = 0; i < length; i++){
 
@@ -229,7 +231,7 @@ fp ++;
 
 else if(A[i] == 0  &&  output[i]==1)
 
-fn ++!
+fn ++;
 
 }
 
@@ -240,7 +242,7 @@ fn ++!
 precision = precision(tp, fp);    // Precision
 recall =  recall(tp, fn);   // Recall
 f1 = f1(precision, recall);    // F1
-printf("precision %d, recall %d, f1 %d\n", precision, recall, f1);
+printf("precision %f, recall %f, f1 %f\n", precision, recall, f1);
 
 }
 
