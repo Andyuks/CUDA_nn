@@ -84,13 +84,14 @@ void train(nn_t *nn, ds_t *ds, int epochs, int size_batch, double lr){
         clock_gettime(clk_id, &t1);
 
         for (x = 0; x < n_batches; x++) {
+            #pragma omp parallel for private (min_batch, i) firstprivate (A, Z, D, d) reduction (+:loss) schedule (static)
             for(min_batch = (x * size_batch); min_batch < ((x + 1) * size_batch); min_batch++){
             
                 i = order[min_batch];
                 forward_pass(nn, &ds->inputs[i * ds->n_inputs], A, Z); 
                 loss += back_prop(nn, &ds->outputs[i * ds->n_outputs], A, Z, D, d);
             }
-            
+            // #pragma omp barrier  /* el final de un parallel for actua ya como uno */
             update(nn, D, d, lr, size_batch);
         }
 
