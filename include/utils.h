@@ -12,6 +12,4 @@ void parse_scaling(ds_t *ds, char *optarg);
 
 long diff_time(const struct timespec t2, const struct timespec t1);
 
-#ifdef GPU
-void set_kernel_params();
 #endif

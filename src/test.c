@@ -34,7 +34,7 @@ void forward_pass_test(nn_t *nn, double *input, double **A){
 
 #include "matrix_gpu.cuh"
 #include "globals_gpu.cuh"
-#include "nn_gpu.cuh"
+//#include "nn_gpu.cuh"
 
 
 void forward_pass_test(nn_t *nn, double *input, double **A){
