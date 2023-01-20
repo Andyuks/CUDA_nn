@@ -195,8 +195,12 @@ __global__ void kcuda_matrix_mul(double *C, double *A, double *B, int a_rows, in
     double sum = 0.0;
     int i;
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
-    __shared__ double c_aux[THR_PER_BLOCK];
+    int col = idx / b_cols;
+	int row = idx % b_cols;
+	
+	__shared__ double c_aux[THR_PER_BLOCK];
     
+	
 #ifdef TIMING
     int res_time;
     struct timespec t1, t2;
@@ -206,7 +210,7 @@ __global__ void kcuda_matrix_mul(double *C, double *A, double *B, int a_rows, in
 
 
     if (idx < a_rows * b_cols) {
-        c_aux[threadIdx.x] = A[idx] * B[idx]; /* need index inside block */
+        c_aux[threadIdx.x] = A[idx] * B[col * blockDim.x + row]; /* need index inside block */
         __syncthreads();
 
         if(threadIdx.x == 0) {
