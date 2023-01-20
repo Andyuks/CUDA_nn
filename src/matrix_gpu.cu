@@ -238,19 +238,19 @@ __global__ void kcuda_matrix_mul(double *C, double *A, double *B, int a_rows, in
 __global__ void kcuda_matrix_sigmoid(double *A, double *B, int rows, int cols){
     int idx = threadIdx.x + blockIdx.x * blockDim.x; 
 
-int sig_z, result;
+
 
 if(idx < (rows * cols)) /*ensure threads not outside dim*/
+A[idx] = dSigmoid(B[idx])
 
-{
 
- sig_z = 1 / (1 + exp(-B[idx])); 
 
- result = sig_z * (1 - sig_z);
 
-A[idx] = result;
 
-}
+
+
+
+
 }
 
 ///////////////////////////////////////////////////////////
