@@ -68,8 +68,6 @@ void forward_pass_test(nn_t *nn, double *input, double **A){
 
     int i;
 	
-	set_kernel_params(); // thr_per_blk and blk_in_grid
-
     for(i = 0; i < nn->layers_size[0]; i++){
         A[0][i] = input[i];
     }

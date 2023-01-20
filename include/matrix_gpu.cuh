@@ -13,8 +13,6 @@ void cuda_matrix_free_2D(double **m, int n_layers);
 
 void cuda_matrix_free(double *m);
 
-void set_kernel_params();
-
 void cuda_matrix_sum(double *c, double *a, double *b, int rows, int cols);
 
 void cuda_matrix_sub(double *c, double *a, double *b, int rows, int cols);

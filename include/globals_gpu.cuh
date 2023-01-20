@@ -27,6 +27,9 @@ extern char model[100];
 
 #define THR_PER_BLOCK 1024
 
+extern int thr_per_blk;
+extern int blk_in_grid;
+
 /*
 #define gpuErrchk(call)                                 \
   do {                                                        \

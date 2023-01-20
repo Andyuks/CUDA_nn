@@ -20,6 +20,21 @@ char dataset[100];
 char scaling[50];
 char model[100];
 
+#ifdef GPU
+
+int thr_per_blk;
+int blk_in_grid;
+
+void set_kernel_params() {
+    // Set execution configuration parameters
+    //      thr_per_blk: number of CUDA threads per grid block
+    //      blk_in_grid: number of blocks in grid
+    thr_per_blk = THR_PER_BLOCK;
+    blk_in_grid = ceil( (float)batches / thr_per_blk );
+}
+
+#endif
+
 char *strremove(char *str, const char *sub) {
     char *p, *q, *r;
     if ((q = r = strstr(str, sub)) != NULL) {

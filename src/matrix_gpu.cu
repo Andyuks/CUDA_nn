@@ -257,14 +257,6 @@ __global__ void kcuda_matrix_dSigmoid(double *A, double *B, int rows, int cols){
 
 /* WRAPPER FUNCTIONS */
 
-void set_kernel_params() {
-    // Set execution configuration parameters
-    //      thr_per_blk: number of CUDA threads per grid block
-    //      blk_in_grid: number of blocks in grid
-    thr_per_blk = THR_PER_BLOCK;
-    blk_in_grid = ceil( (float)batches / thr_per_blk );
-}
-
 void cuda_matrix_sum(double *c, double *a, double *b, int rows, int cols) {
     kcuda_matrix_sum<<<blk_in_grid, thr_per_blk>>>(c, a, b, rows, cols);
 }

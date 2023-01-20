@@ -20,6 +20,10 @@ int main(int argc, char **argv) {
 
     parse_arguments(argc, argv);
 
+    #ifdef GPU
+        set_kernel_params();   // thr_per_blk and blk_in_grid
+    #endif
+
     if(train_mode){
         srand(seed);
         read_csv(dataset, &ds, layers[0], layers[n_layers - 1]);

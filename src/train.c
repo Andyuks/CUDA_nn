@@ -97,8 +97,6 @@ void forward_pass(nn_t *nn, double *input, double **A, double **Z){
 
     int i;
 	
-	set_kernel_params();
-
     for(i = 0; i < nn->layers_size[0]; i++){
         A[0][i] = input[i];
     }
@@ -120,8 +118,6 @@ double back_prop(nn_t *nn, double *output, double **A, double **Z, double **D, d
     double *T;
     double **E, **D_aux;
 	
-	set_kernel_params();
-
     n_l = nn->n_layers;
     l_s = nn->layers_size;
 
@@ -162,8 +158,6 @@ double back_prop(nn_t *nn, double *output, double **A, double **Z, double **D, d
 void update(nn_t *nn, double **D, double **d, double lr, int batch_size){
 
     int i;
-
-	set_kernel_params();
 	
     for(i = 0; i < nn->n_layers - 1; i++){
 		cuda_matrix_mul_cnt(D[i], nn->layers_size[i + 1], nn->layers_size[i],  lr * (1.0 / batch_size));
