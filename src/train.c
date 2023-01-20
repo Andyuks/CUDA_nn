@@ -105,8 +105,10 @@ void forward_pass(nn_t *nn, double *input, double **A, double **Z){
     
     for(i = 1; i < nn->n_layers; i++){
 		cuda_matrix_mul_add(Z[i], nn->WH[i - 1], A[i - 1],  nn->layers_size[i], nn->layers_size[i - 1], nn->layers_size[i - 1], 1, nn->BH[i - 1]);
-		cuda_matrix_func(A[i], Z[i], nn->layers_size[i], 1, nn->activation_ptr[i - 1]);
-		cuda_matrix_func(Z[i], Z[i], nn->layers_size[i], 1, nn->dactivation_ptr[i - 1]);
+		// cuda_matrix_func(A[i], Z[i], nn->layers_size[i], 1, nn->activation_ptr[i - 1]);
+		// cuda_matrix_func(Z[i], Z[i], nn->layers_size[i], 1, nn->dactivation_ptr[i - 1]);
+        cuda_matrix_sigmoid(A[i], Z[i], nn->layers_size[i], 1);
+		cuda_matrix_dSigmoid(Z[i], Z[i], nn->layers_size[i], 1);
     }
 }
 

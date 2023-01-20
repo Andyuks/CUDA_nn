@@ -178,6 +178,7 @@ __global__ void kcuda_matrix_mul_dot(double *C, double *A, double *B, int rows, 
 		C[idx] = A[idx] * B[idx];
 }
 
+
 /* GPU: matrix transpose */
 __global__ void kcuda_matrix_transpose(double * m, double * m_tr, int rows, int cols) {
 
@@ -238,21 +239,20 @@ __global__ void kcuda_matrix_mul(double *C, double *A, double *B, int a_rows, in
 __global__ void kcuda_matrix_sigmoid(double *A, double *B, int rows, int cols){
     int idx = threadIdx.x + blockIdx.x * blockDim.x; 
 
-
-
-if(idx < (rows * cols)) /*ensure threads not outside dim*/
-A[idx] = dSigmoid(B[idx])
-
-
-
-
-
-
-
-
-
+    if(idx < (rows * cols)) /*ensure threads not outside dim*/
+        A[idx] = 1 / (1 + exp(-B[idx])); 
 }
 
+
+__global__ void kcuda_matrix_dSigmoid(double *A, double *B, int rows, int cols){
+    int idx = threadIdx.x + blockIdx.x * blockDim.x; 
+    int sig_z;
+
+    if(idx < (rows * cols)) { /*ensure threads not outside dim*/
+        sig_z = 1 / (1 + exp(-B[idx])); 
+        A[idx] = sig_z * (1 - sig_z);
+    }
+}
 ///////////////////////////////////////////////////////////
 
 /* WRAPPER FUNCTIONS */
@@ -304,7 +304,12 @@ void cuda_matrix_mul_add(double *c, double *a, double *b, int a_rows, int a_cols
     cuda_matrix_free(c_aux);
 }
 
-void cuda_matrix_func(double *n, double *m, int m_rows, int m_cols, double (*func)(double)){
+void cuda_matrix_sigmoid(double *n, double *m, int m_rows, int m_cols){
     //kcuda_matrix_func<<<blk_in_grid, thr_per_blk>>>(n, m, m_rows, m_cols, func);
     kcuda_matrix_sigmoid<<<blk_in_grid, thr_per_blk>>>(n, m, m_rows, m_cols);
+}
+
+void cuda_matrix_dSigmoid(double *n, double *m, int m_rows, int m_cols){
+    //kcuda_matrix_func<<<blk_in_grid, thr_per_blk>>>(n, m, m_rows, m_cols, func);
+    kcuda_matrix_dSigmoid<<<blk_in_grid, thr_per_blk>>>(n, m, m_rows, m_cols);
 }

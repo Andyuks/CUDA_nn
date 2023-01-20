@@ -31,5 +31,8 @@ void cuda_matrix_mul(double *c, double *a, double *b, int a_rows, int a_cols, in
 
 void cuda_matrix_mul_add(double *c, double *a, double *b, int a_rows, int a_cols, int b_rows, int b_cols, double* d);
 
-void cuda_matrix_func(double *n, double *m, int m_rows, int m_cols, double (*func)(double));
+void cuda_matrix_sigmoid(double *n, double *m, int m_rows, int m_cols);
+
+void cuda_matrix_dSigmoid(double *n, double *m, int m_rows, int m_cols);
+
 #endif
