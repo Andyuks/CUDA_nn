@@ -17,58 +17,58 @@
 
 double **cuda_alloc_matrix_2v(int n_layers, int *size, int *size_prev, double (*init_weight_ptr)(void)){
 
-    double **m;
+    double **m_dev, **m_host;
     int i, j;
-
     cudaError_t malloc_call;
-    malloc_call = cudaMalloc(&m, n_layers * sizeof(double*));
-    
-    if (malloc_call != cudaSuccess)
-        return NULL;
+
+    m_host = (double **) malloc(n_layers * sizeof(double *));
+    m_dev = (double **) malloc(n_layers * sizeof(double *));
 
     for (i = 0; i < n_layers; i++){
-	malloc_call = cudaMalloc(&m[i], size[i] * size_prev[i] * sizeof(double));
+	    malloc_call = cudaMalloc(&m_dev[i], size[i] * size_prev[i] * sizeof(double));
+        
         if (malloc_call != cudaSuccess) {
-            cuda_matrix_free_2D(m, n_layers);
+            cuda_matrix_free_2D(m_dev, n_layers);
             return NULL;
         }
+
+        m_host[i] = (double *) malloc(size[i] * size_prev[i] * sizeof(double));
+
+        for (j = 0; j < size[i]; j++)
+            m_host[i][j] = 0.0;
+
+        cudaMemcpy(m_dev[i], m_host[i], size[i] * size_prev[i] * sizeof(double), cudaMemcpyHostToDevice);
     }
 
-    for (i = 0; i < n_layers; i++){
-        for (j = 0; j < size[i] * size_prev[i]; j++){
-            m[i][j] = init_weight_ptr();
-        }
-    }
-
-    return(m);
+    return m_dev;
 }
 
 double **cuda_alloc_matrix_1v(int n_layers, int *size, double (*init_weight_ptr)(void)){
 
-    double **m;
+    double **m_dev, **m_host;
     int i, j;
-
     cudaError_t malloc_call;
-    malloc_call = cudaMalloc(&m, n_layers * sizeof(double*));
-    
-    if (malloc_call != cudaSuccess)
-        return NULL;
+
+    m_host = (double **) malloc(n_layers * sizeof(double *));
+    m_dev = (double **) malloc(n_layers * sizeof(double *));
 
     for (i = 0; i < n_layers; i++){
-        malloc_call = cudaMalloc(&m[i], size[i] * sizeof(double));
+	    malloc_call = cudaMalloc(&m_dev[i], size[i] * sizeof(double));
+        
         if (malloc_call != cudaSuccess) {
-            cuda_matrix_free_2D(m, n_layers);
+            cuda_matrix_free_2D(m_dev, n_layers);
             return NULL;
         }
-    }
 
-    for (i = 0; i < n_layers; i++){
-        for (j = 0; j < size[i]; j++){
-            m[i][j] = init_weight_ptr();
-        }
-    }
+        m_host[i] = (double *) malloc(size[i] * sizeof(double));
 
-    return(m);
+        for (j = 0; j < size[i]; j++)
+            m_host[i][j] = 0.0;
+
+        cudaMemcpy(m_dev[i], m_host[i], size[i] * sizeof(double), cudaMemcpyHostToDevice);
+    }
+    
+    return m_dev;
 }
 
 double *cuda_alloc_array(int length){
