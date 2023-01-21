@@ -119,11 +119,8 @@ void test(nn_t *nn, ds_t *ds){
 
         forward_pass_test(nn, &ds->inputs[i * ds->n_inputs], A);
     }
+    result_management( &ds->outputs[(batches-1) * ds->n_outputs], A[(batches-1) * ds->n_outputs], nn->layers_size[nn->n_layers - 1]);
 
-	result_management( &ds->outputs[(n_batches-1) * ds->n_outputs], A[(n_batches-1) * ds->n_outputs], nn->layers_size[nn->n_layers - 1]);			
-    // Precision
-    // Recall
-    // F1
 }
 
 #endif
@@ -203,10 +200,10 @@ void test(nn_t *nn, ds_t *ds){
     A = cuda_alloc_matrix_1v(nn->n_layers, nn->layers_size, init_zero);
 
     for(i = 0; i < ds->n_samples; i++){
-
         forward_pass_test(nn, &ds->inputs[i * ds->n_inputs], A);
     }
-result_management( &ds->outputs[(n_batches-1) * ds->n_outputs], A[(n_batches-1) * ds->n_outputs], nn->layers_size[nn->n_layers - 1]);
+
+    result_management( &ds->outputs[(batches-1) * ds->n_outputs], A[(batches-1) * ds->n_outputs], nn->layers_size[nn->n_layers - 1]);
 }
 
 #endif
@@ -214,39 +211,22 @@ result_management( &ds->outputs[(n_batches-1) * ds->n_outputs], A[(n_batches-1) 
 
 //////////////////////////////////////////////////////////////////////////////////////////
 
-void result_management(double * output, double * A, int length)
-{
-int i, tp, fp, fn;
-float precision, recall, f1;
+void result_management(double * output, double *A, int length) {
+    int i, tp, fp, fn;
+    float precision_out, recall_out, f1_out;
 
-for(i = 0; i < length; i++){
+    for(i = 0; i < length; i++){
+        if      (A[i] == 1  &&  output[i]==1)   tp++;
+        else if (A[i] == 1  &&  output[i]==0)   fp++;
+        else if (A[i] == 0  &&  output[i]==1)   fn++;
+    }
 
-if (A[i] == 1  &&  output[i]==1)
-
-tp++;
-
-else if (A[i] == 1  &&  output[i]==0)
-
-fp ++;
-
-else if(A[i] == 0  &&  output[i]==1)
-
-fn ++;
+    precision_out = precision(tp, fp);    // Precision
+    recall_out = recall(tp, fn);          // Recall
+    f1_out = f1(precision_out, recall_out);       // F1
+    printf("precision %f, recall %f, f1 %f\n", precision_out, recall_out, f1_out);
 
 }
-
-
-
-
-
-precision = precision(tp, fp);    // Precision
-recall =  recall(tp, fn);   // Recall
-f1 = f1(precision, recall);    // F1
-printf("precision %f, recall %f, f1 %f\n", precision, recall, f1);
-
-}
-
-
 
 
 void print_nn(nn_t *nn){
