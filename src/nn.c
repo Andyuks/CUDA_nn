@@ -173,6 +173,8 @@ void train(nn_t *nn, ds_t *ds, int epochs, int size_batch, double lr) {
                     forward_pass(nn, &ds->inputs[i * ds->n_inputs], A, Z); 
                     loss += back_prop(nn, &ds->outputs[i * ds->n_outputs], A, Z, D, d);
                 }
+
+                update(nn, D, d, lr, size_batch);
             }
 
         /*
@@ -241,9 +243,9 @@ void result_management(double * output, double **A, int length, int layer) {
         printf("Recall: %f \n", recall_out);
     
     if (f1_out == FLT_MIN)
-        printf("F-score: --- \n");
+        printf("F1 (F-score): --- \n");
     else 
-        printf("F-score: %f \n", f1_out);
+        printf("F1 (F-score): %f \n", f1_out);
 }
 
 

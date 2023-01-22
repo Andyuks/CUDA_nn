@@ -33,7 +33,7 @@ double back_prop(nn_t *nn, double *output, double **A, double **Z, double **D, d
 
     D_aux = alloc_matrix_2v(n_l - 1, &(l_s[1]), &(l_s[0]), init_zero);
     E = alloc_matrix_1v(n_l - 1, &(l_s[1]), init_zero);
-
+    
     loss = nn->loss(A[n_l - 1], output, l_s[n_l - 1]);
 
     matrix_sub(E[n_l - 2], A[n_l - 1], output, l_s[n_l - 1], 1);
