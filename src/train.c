@@ -93,12 +93,13 @@ void update(nn_t *nn, double **D, double **d, double lr, int batch_size){
 #ifdef GPU
 #include "matrix_gpu.cuh"
 
-void forward_pass(nn_t *nn, double *input, double **A, double **Z){
+void forward_pass(nn_t *nn, double *input, double **A, double **Z) {
 
     int i;
 	
     for(i = 0; i < nn->layers_size[0]; i++){
-        A[0][i] = input[i];
+        //A[0][i] = input[i];
+        cuda_copyToDev(&A[0][i], &input[i], sizeof(double));
     }
     
     for(i = 1; i < nn->n_layers; i++){

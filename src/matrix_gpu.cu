@@ -34,8 +34,8 @@ double **cuda_alloc_matrix_2v(int n_layers, int *size, int *size_prev, double (*
 
         m_host[i] = (double *) malloc(size[i] * size_prev[i] * sizeof(double));
 
-        for (j = 0; j < size[i]; j++)
-            m_host[i][j] = 0.0;
+        for (j = 0; j < size[i] * size_prev[i]; j++)
+            m_host[i][j] = init_weight_ptr();
 
         cudaMemcpy(m_dev[i], m_host[i], size[i] * size_prev[i] * sizeof(double), cudaMemcpyHostToDevice);
     }
@@ -63,18 +63,18 @@ double **cuda_alloc_matrix_1v(int n_layers, int *size, double (*init_weight_ptr)
         m_host[i] = (double *) malloc(size[i] * sizeof(double));
 
         for (j = 0; j < size[i]; j++)
-            m_host[i][j] = 0.0;
+            m_host[i][j] = init_weight_ptr();
 
         cudaMemcpy(m_dev[i], m_host[i], size[i] * sizeof(double), cudaMemcpyHostToDevice);
     }
-    
+
     return m_dev;
 }
 
 double *cuda_alloc_array(int length){
 
     double *v;
-    int i;
+    //int i;
 
     cudaError_t malloc_call;
     malloc_call = cudaMalloc(&v, length * sizeof(double));
@@ -82,9 +82,11 @@ double *cuda_alloc_array(int length){
     if (malloc_call != cudaSuccess)
         return NULL;
 
+    /*
     for (i = 0; i < length; i++){
         v[i] = 0.0;
-    }
+    }*/
+    cudaMemset(v, 0x0, length * sizeof(double));
     
     return(v);
 }
@@ -93,7 +95,7 @@ double *cuda_alloc_array(int length){
 double *cuda_alloc_matrix(int rows, int cols){
 
     double *m;
-    int i;
+    //int i;
 
     cudaError_t malloc_call;
     malloc_call = cudaMalloc(&m, rows * cols * sizeof(double));
@@ -101,9 +103,11 @@ double *cuda_alloc_matrix(int rows, int cols){
     if (malloc_call != cudaSuccess)
         return NULL;
 
+    /*
     for (i = 0; i < rows * cols; i++){
         m[i] = 0.0;
-    }
+    }*/
+    cudaMemset(m, 0x0, rows * cols * sizeof(double));
     
     return(m);
 }
@@ -128,6 +132,13 @@ void cuda_matrix_free(double *m){
 }
 
 
+void cuda_copyToDev(void* dst, const void* src, size_t count){
+    cudaMemcpy(dst, src, count, cudaMemcpyHostToDevice);
+}
+
+void cuda_copyToHost(void* dst, const void* src, size_t count){
+    cudaMemcpy(dst, src, count, cudaMemcpyDeviceToHost);
+}
 
 /* operations */ 
 
