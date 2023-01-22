@@ -17,11 +17,12 @@ extern char dataset[100];
 extern char scaling[50];
 extern char model[100];
 
-#define THR_PER_BLOCK 1024
+#define THR_PER_BLOCK 256 // Best candidate according to Nvidia GPU spec comparison
 
+/*
 extern int thr_per_blk;
 extern int blk_in_grid;
-
+*/
 
 #endif
 

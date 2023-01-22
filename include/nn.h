@@ -26,7 +26,7 @@ void train(nn_t *nn, ds_t *ds, int epochs, int batches, double lr);
 
 void test(nn_t *nn, ds_t *ds);
 
-void result_management(double * output, double *A, int length);
+void result_management(double * output, double **A, int length, int layer);
 
 void import_nn(nn_t *nn, char *filename);
 

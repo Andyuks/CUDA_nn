@@ -34,7 +34,7 @@ void forward_pass_test(nn_t *nn, double *input, double **A){
 #ifdef GPU
 
 #include "matrix_gpu.cuh"
-//#include "nn_gpu.cuh"
+#include "cuda_aux.cuh"
 
 
 void forward_pass_test(nn_t *nn, double *input, double **A){
@@ -42,8 +42,10 @@ void forward_pass_test(nn_t *nn, double *input, double **A){
     int i;
 	
     for(i = 0; i < nn->layers_size[0]; i++){
-        A[0][i] = input[i];
+        //A[0][i] = input[i];
+        cuda_copyToDev(&A[0][i], &input[i], sizeof(double));
     }
+    
     
     for(i = 1; i < nn->n_layers; i++){
 		cuda_matrix_mul_add(A[i], nn->WH[i - 1], A[i - 1],  nn->layers_size[i], nn->layers_size[i - 1], nn->layers_size[i - 1], 1, nn->BH[i - 1]);
@@ -56,13 +58,13 @@ void forward_pass_test(nn_t *nn, double *input, double **A){
 
 // Common functions
 
-float precision(int tp, int fp){
+float precision(unsigned int tp, unsigned int fp){
 
     float precision = tp/(tp+fp);
     return(precision);
 }
 
-float recall(int tp, int fn){
+float recall(unsigned int tp, unsigned int fn){
 
     float recall = tp/(tp+fn);
     return(recall);

@@ -7,7 +7,7 @@ CC_LIBS=-lm -g #-mavx512f -fopenmp
 # NVCC compiler options:
 NVCC=nvcc
 NVCC_FLAGS=-Iinclude
-NVCC_LIBS=-arch=sm_70 -g
+NVCC_LIBS=-arch=sm_86 -g
 
 # CUDA library directory:
 CUDA_LIB_DIR= -L$(CUDA_ROOT_DIR)/lib64

@@ -7,12 +7,11 @@ void forward_pass(nn_t *nn, double *input, double **A, double **Z){
 
     int i;
 
-    #pragma omp parallel for private (i) schedule (static)
+    //#pragma omp parallel for private (i) schedule (static)
     for(i = 0; i < nn->layers_size[0]; i++){
         A[0][i] = input[i];
     }
         
-    // RAW dist 1 -> cannot use omp
     for(i = 1; i < nn->n_layers; i++){
 
         matrix_mul_add(Z[i], nn->WH[i - 1], A[i - 1],  nn->layers_size[i], nn->layers_size[i - 1], nn->layers_size[i - 1], 1, nn->BH[i - 1]);  
@@ -73,8 +72,7 @@ double back_prop(nn_t *nn, double *output, double **A, double **Z, double **D, d
 void update(nn_t *nn, double **D, double **d, double lr, int batch_size){
 
     int i;
-    #pragma omp parallel for private (i) schedule (static)
-    for(i = 0; i < nn->n_layers - 1; i++){
+    for(i = 0; i < nn->n_layers - 1; i++) {
 
         matrix_mul_cnt(D[i], nn->layers_size[i + 1], nn->layers_size[i],  lr * (1.0 / batch_size));
         matrix_mul_cnt(d[i], nn->layers_size[i + 1], 1,  lr * (1.0 / batch_size));

@@ -13,9 +13,8 @@
 #include "matrix_common.h"
 #include "globals.h"
 
-#ifdef CPU
 #include "matrix.h"
-#endif
+
 
 #ifdef GPU
 #include "matrix_gpu.cuh"
@@ -84,9 +83,8 @@ void train(nn_t *nn, ds_t *ds, int epochs, int size_batch, double lr){
 
         clock_gettime(clk_id, &t1);
 
-        #pragma omp parallel private (x, min_batch, i) shared (A, Z, D, d) reduction (+:loss)
-        {
-            #pragma omp for schedule (static)
+
+        #pragma omp parallel for private (x, min_batch, i) shared (A, Z, D, d) reduction (+:loss) schedule (static)
             for (x = 0; x < n_batches; x++) {
                 for(min_batch = (x * size_batch); min_batch < ((x + 1) * size_batch); min_batch++){
                 
@@ -95,12 +93,10 @@ void train(nn_t *nn, ds_t *ds, int epochs, int size_batch, double lr){
                     loss += back_prop(nn, &ds->outputs[i * ds->n_outputs], A, Z, D, d);
                 }
             }
-            #pragma omp barrier
-            #pragma omp master
-            {
-                update(nn, D, d, lr, size_batch);
-            }
-        }
+
+        for (x = 0; x < n_batches; x++)
+            update(nn, D, d, lr, size_batch);
+
 
         clock_gettime(clk_id, &t2);
 
@@ -122,8 +118,7 @@ void test(nn_t *nn, ds_t *ds){
 
         forward_pass_test(nn, &ds->inputs[i * ds->n_inputs], A);
     }
-    result_management( &ds->outputs[(batches-1) * ds->n_outputs], A[(batches-1) * ds->n_outputs], nn->layers_size[nn->n_layers - 1]);
-
+    result_management(ds->outputs, A, nn->layers_size[nn->n_layers - 1], nn->n_layers-1);
 }
 
 #endif
@@ -168,7 +163,7 @@ void train(nn_t *nn, ds_t *ds, int epochs, int size_batch, double lr) {
 
 
         
-        //#pragma omp parallel for private (x, min_batch, i) shared (A, Z, D, d) reduction (+:loss) schedule (static)
+        // #pragma omp parallel for private (x, min_batch, i) shared (A, Z, D, d) reduction (+:loss) schedule (static)
             for (x = 0; x < n_batches; x++) {
                 for(min_batch = (x * size_batch); min_batch < ((x + 1) * size_batch); min_batch++){
                 
@@ -176,12 +171,13 @@ void train(nn_t *nn, ds_t *ds, int epochs, int size_batch, double lr) {
                     forward_pass(nn, &ds->inputs[i * ds->n_inputs], A, Z); 
                     loss += back_prop(nn, &ds->outputs[i * ds->n_outputs], A, Z, D, d);
                 }
-                update(nn, D, d, lr, size_batch);
-
             }
-            
-        //update(nn, D, d, lr, size_batch);
-        
+
+        /*
+        for (x = 0; x < n_batches; x++)
+            update(nn, D, d, lr, size_batch);
+        */
+                    
         // cuda_train_batch<<<batch_sample_blks, thr_per_blk>>>(nn, ds, size_batch, lr, n_batches, order, loss, A, Z, D, d);
 
         clock_gettime(clk_id, &t2);
@@ -193,7 +189,7 @@ void train(nn_t *nn, ds_t *ds, int epochs, int size_batch, double lr) {
 
 }
 
-void test(nn_t *nn, ds_t *ds){
+void test(nn_t *nn, ds_t *ds) {
     
     int i;
     double **A;
@@ -204,7 +200,7 @@ void test(nn_t *nn, ds_t *ds){
         forward_pass_test(nn, &ds->inputs[i * ds->n_inputs], A);
     }
 
-    result_management( &ds->outputs[(nn->n_layers-1) * ds->n_outputs], A[(nn->n_layers-1) * ds->n_outputs], nn->layers_size[nn->n_layers - 1]);
+    result_management(ds->outputs, A, nn->layers_size[nn->n_layers - 1], nn->n_layers - 1);
 }
 
 #endif
@@ -212,16 +208,22 @@ void test(nn_t *nn, ds_t *ds){
 
 //////////////////////////////////////////////////////////////////////////////////////////
 
-void result_management(double * output, double *A, int length) {
-    int i, tp, fp, fn;
+void result_management(double * output, double **A, int length, int layer) {
+    int i;
+    unsigned int tp, tn, fp, fn;
+    tp = tn = fp = fn = 0;
+
     float precision_out, recall_out, f1_out;
 
     for(i = 0; i < length; i++){
-        if      (A[i] == 1  &&  output[i]==1)   tp++;
-        else if (A[i] == 1  &&  output[i]==0)   fp++;
-        else if (A[i] == 0  &&  output[i]==1)   fn++;
+        printf ("A[%d][%d] = %f ; output[%d] = %f \n", layer, i, A[layer][i], i, output[i]);
+        if      (A[layer][i] >= 0.5  &&  output[i]==1)   tp++;
+        else if (A[layer][i] >= 0.5  &&  output[i]==0)   fp++;
+        else if (A[layer][i] < 0.5   &&  output[i]==1)   fn++;
+        else if (A[layer][i] < 0.5   &&  output[i]==1)   tn++;
     }
 
+    printf("TP = %u, TN = %u, FP = %u, FN = %u \n", tp, tn, fp, fn);
     precision_out = precision(tp, fp);    // Precision
     recall_out = recall(tp, fn);          // Recall
     f1_out = f1(precision_out, recall_out);       // F1
@@ -283,6 +285,7 @@ void import_nn(nn_t *nn, char *filename){
 
     init_nn(nn, n_layers, layers);
     
+    #ifdef CPU
     for (i = 0; i < nn->n_layers - 1; i++) {
         for (j = 0; j < nn->layers_size[i + 1]; j++) {
             fscanf(fd, "%lf ", &(nn->BH[i][j]));
@@ -296,6 +299,36 @@ void import_nn(nn_t *nn, char *filename){
             }
         }
     }
+    #endif
+
+    #ifdef GPU
+    
+    double **BH_h = alloc_matrix_1v(nn->n_layers - 1, &(nn->layers_size[1]), init_zero);
+    double **WH_h = alloc_matrix_2v(nn->n_layers - 1, &(nn->layers_size[1]),  &(nn->layers_size[0]), init_zero);
+
+    for (i = 0; i < nn->n_layers - 1; i++) {
+        for (j = 0; j < nn->layers_size[i + 1]; j++) {
+            fscanf(fd, "%lf ", &(BH_h[i][j]));
+        }
+    }
+
+    for (i = 0; i < nn->n_layers - 1; i++) {
+        for (j = 0; j < nn->layers_size[i + 1]; j++) {
+            for(k = 0; k < nn->layers_size[i]; k++) {
+                fscanf(fd, "%lf ", &(WH_h[i][(j * nn->layers_size[i]) + k]));
+            }
+        }
+    }
+
+    cuda_copyToDev(nn->BH, BH_h, (nn->n_layers - 1) * (nn->layers_size[1]) * sizeof(double));
+    cuda_copyToDev(nn->WH, WH_h, (nn->n_layers - 1) * (nn->layers_size[1]) * (nn->layers_size[0]) * sizeof(double));
+
+    matrix_free_2D(BH_h, nn->n_layers - 1);
+    matrix_free_2D(WH_h, nn->n_layers - 1);
+
+
+    #endif
+
     fclose(fd);
 }
 
@@ -316,6 +349,7 @@ void export_nn(nn_t *nn, char *filename){
     }
     fprintf(fd, "\n");
     
+    #ifdef CPU
     for (i = 0; i < nn->n_layers - 1; i++) {
         for (j = 0; j < nn->layers_size[i + 1]; j++) {
             fprintf(fd, "%lf ", nn->BH[i][j]);
@@ -331,5 +365,34 @@ void export_nn(nn_t *nn, char *filename){
             fprintf(fd, "\n");
         }
     }
+    #endif
+
+    #ifdef GPU
+    double **BH_h = alloc_matrix_1v(nn->n_layers - 1, &(nn->layers_size[1]), init_zero);
+    double **WH_h = alloc_matrix_2v(nn->n_layers - 1, &(nn->layers_size[1]),  &(nn->layers_size[0]), init_zero);
+
+    for (i = 0; i < nn->n_layers - 1; i++) {
+        for (j = 0; j < nn->layers_size[i + 1]; j++) {
+            fprintf(fd, "%lf ", BH_h[i][j]);
+        }
+        fprintf(fd, "\n");
+    }
+
+    for (i = 0; i < nn->n_layers - 1; i++) {
+        for (j = 0; j < nn->layers_size[i + 1]; j++) {
+            for(k = 0; k < nn->layers_size[i]; k++) {
+                fprintf(fd, "%lf ", WH_h[i][(j * nn->layers_size[i]) + k]);
+            }
+            fprintf(fd, "\n");
+        }
+    }
+
+    cuda_copyToDev(nn->BH, BH_h, (nn->n_layers - 1) * (nn->layers_size[1]) * sizeof(double));
+    cuda_copyToDev(nn->WH, WH_h, (nn->n_layers - 1) * (nn->layers_size[1]) * (nn->layers_size[0]) * sizeof(double));
+
+    matrix_free_2D(BH_h, nn->n_layers - 1);
+    matrix_free_2D(WH_h, nn->n_layers - 1);
+
+    #endif
     fclose(fd);
 }

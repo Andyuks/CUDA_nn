@@ -257,50 +257,63 @@ __global__ void kcuda_matrix_dSigmoid(double *A, double *B, int rows, int cols){
 /* WRAPPER FUNCTIONS */
 
 void cuda_matrix_sum(double *c, double *a, double *b, int rows, int cols) {
-    kcuda_matrix_sum<<<blk_in_grid, thr_per_blk>>>(c, a, b, rows, cols);
+    int blk_in_grid = ceil( (float) (rows * cols) / THR_PER_BLOCK );
+    kcuda_matrix_sum<<<blk_in_grid, THR_PER_BLOCK>>>(c, a, b, rows, cols);
 }
 
 void cuda_matrix_sub(double *c, double *a, double *b, int rows, int cols){
-    kcuda_matrix_sub<<<blk_in_grid, thr_per_blk>>>(c, a, b, rows, cols);
+    int blk_in_grid = ceil( (float) (rows * cols) / THR_PER_BLOCK );
+    kcuda_matrix_sub<<<blk_in_grid, THR_PER_BLOCK>>>(c, a, b, rows, cols);
 }
 
 void cuda_matrix_mul_cnt(double *m, int rows, int cols, double cnt){
-    kcuda_matrix_mul_cnt<<<blk_in_grid, thr_per_blk>>>(m, rows, cols, cnt);
+    int blk_in_grid = ceil( (float) (rows * cols) / THR_PER_BLOCK );
+    kcuda_matrix_mul_cnt<<<blk_in_grid, THR_PER_BLOCK>>>(m, rows, cols, cnt);
 }
 
 void cuda_matrix_zero(double *m, int rows, int cols){
-    kcuda_matrix_zero<<<blk_in_grid, thr_per_blk>>>(m, rows, cols);
+    int blk_in_grid = ceil( (float) (rows * cols) / THR_PER_BLOCK );
+    kcuda_matrix_zero<<<blk_in_grid, THR_PER_BLOCK>>>(m, rows, cols);
 }
 
 void cuda_matrix_mul_dot(double *c, double *a, double *b, int rows, int cols){
-    kcuda_matrix_mul_dot<<<blk_in_grid, thr_per_blk>>>(c, a, b, rows, cols);
+    int blk_in_grid = ceil( (float) (rows * cols) / THR_PER_BLOCK );
+    kcuda_matrix_mul_dot<<<blk_in_grid, THR_PER_BLOCK>>>(c, a, b, rows, cols);
 }
 
 double * cuda_matrix_transpose(double *m, int rows, int cols){
     double *m_tr;
     m_tr = cuda_alloc_matrix(rows, cols);
-    kcuda_matrix_transpose<<<blk_in_grid, thr_per_blk>>>(m, m_tr, rows, cols);
+
+    int blk_in_grid = ceil( (float) (rows * cols) / THR_PER_BLOCK );
+    kcuda_matrix_transpose<<<blk_in_grid, THR_PER_BLOCK>>>(m, m_tr, rows, cols);
     return m_tr;
 }
 
 void cuda_matrix_mul(double *c, double *a, double *b, int a_rows, int a_cols, int b_rows, int b_cols){
-    kcuda_matrix_mul<<<blk_in_grid, thr_per_blk>>>(c, a, b, a_rows, a_cols, b_rows, b_cols);
+    int blk_in_grid = ceil( (float) (a_rows * b_cols) / THR_PER_BLOCK );
+    kcuda_matrix_mul<<<blk_in_grid, THR_PER_BLOCK>>>(c, a, b, a_rows, a_cols, b_rows, b_cols);
 }
 
 void cuda_matrix_mul_add(double *c, double *a, double *b, int a_rows, int a_cols, int b_rows, int b_cols, double* d){
     double *c_aux;
     c_aux = cuda_alloc_matrix(a_rows, b_cols);
-    kcuda_matrix_mul<<<blk_in_grid, thr_per_blk>>>(c_aux, a, b, a_rows, a_cols, b_rows, b_cols);
-    kcuda_matrix_sum<<<blk_in_grid, thr_per_blk>>>(c, c_aux, d, a_rows, b_cols);
+
+    int blk_in_grid = ceil( (float) (a_rows * b_cols) / THR_PER_BLOCK );
+    kcuda_matrix_mul<<<blk_in_grid, THR_PER_BLOCK>>>(c_aux, a, b, a_rows, a_cols, b_rows, b_cols);
+    kcuda_matrix_sum<<<blk_in_grid, THR_PER_BLOCK>>>(c, c_aux, d, a_rows, b_cols);
+
     cuda_matrix_free(c_aux);
 }
 
 void cuda_matrix_sigmoid(double *n, double *m, int m_rows, int m_cols){
-    //kcuda_matrix_func<<<blk_in_grid, thr_per_blk>>>(n, m, m_rows, m_cols, func);
-    kcuda_matrix_sigmoid<<<blk_in_grid, thr_per_blk>>>(n, m, m_rows, m_cols);
+    int blk_in_grid = ceil( (float) (m_rows * m_cols) / THR_PER_BLOCK );
+    //kcuda_matrix_func<<<blk_in_grid, THR_PER_BLOCK>>>(n, m, m_rows, m_cols, func);
+    kcuda_matrix_sigmoid<<<blk_in_grid, THR_PER_BLOCK>>>(n, m, m_rows, m_cols);
 }
 
 void cuda_matrix_dSigmoid(double *n, double *m, int m_rows, int m_cols){
-    //kcuda_matrix_func<<<blk_in_grid, thr_per_blk>>>(n, m, m_rows, m_cols, func);
-    kcuda_matrix_dSigmoid<<<blk_in_grid, thr_per_blk>>>(n, m, m_rows, m_cols);
+    int blk_in_grid = ceil( (float) (m_rows * m_cols) / THR_PER_BLOCK );
+    //kcuda_matrix_func<<<blk_in_grid, THR_PER_BLOCK>>>(n, m, m_rows, m_cols, func);
+    kcuda_matrix_dSigmoid<<<blk_in_grid, THR_PER_BLOCK>>>(n, m, m_rows, m_cols);
 }
