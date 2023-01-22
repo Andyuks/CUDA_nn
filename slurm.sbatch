@@ -21,7 +21,7 @@
 # Select one partition
 #SBATCH --partition=EHP-PAR
 # #SBATCH --gpus-per-task=2
-# #SBATCH --gpus=1
+# #SBATCH --gpus=2
 
 # If you are using arrays, specify the number of tasks in the array
 #SBATCH --array=1-1
