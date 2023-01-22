@@ -3,6 +3,7 @@
 #include <math.h>
 #include <time.h>
 #include <omp.h>
+#include <float.h>
 
 #include "ds.h"
 #include "nn.h"
@@ -114,11 +115,12 @@ void test(nn_t *nn, ds_t *ds){
 
     A = alloc_matrix_1v(nn->n_layers, nn->layers_size, init_zero);
 
+    #pragma omp parallel for private (i) schedule (static)
     for(i = 0; i < ds->n_samples; i++){
-
         forward_pass_test(nn, &ds->inputs[i * ds->n_inputs], A);
     }
-    result_management(ds->outputs, A, nn->layers_size[nn->n_layers - 1], nn->n_layers-1);
+
+    result_management(&ds->outputs[(ds->n_samples-1) * ds->n_outputs], A, nn->layers_size[nn->n_layers - 1], nn->n_layers - 1);
 }
 
 #endif
@@ -200,7 +202,7 @@ void test(nn_t *nn, ds_t *ds) {
         forward_pass_test(nn, &ds->inputs[i * ds->n_inputs], A);
     }
 
-    result_management(ds->outputs, A, nn->layers_size[nn->n_layers - 1], nn->n_layers - 1);
+    result_management(&ds->outputs[(ds->n_samples-1) * ds->n_outputs], A, nn->layers_size[nn->n_layers - 1], nn->n_layers - 1);
 }
 
 #endif
@@ -217,18 +219,31 @@ void result_management(double * output, double **A, int length, int layer) {
 
     for(i = 0; i < length; i++){
         printf ("A[%d][%d] = %f ; output[%d] = %f \n", layer, i, A[layer][i], i, output[i]);
-        if      (A[layer][i] >= 0.5  &&  output[i]==1)   tp++;
-        else if (A[layer][i] >= 0.5  &&  output[i]==0)   fp++;
-        else if (A[layer][i] < 0.5   &&  output[i]==1)   fn++;
-        else if (A[layer][i] < 0.5   &&  output[i]==1)   tn++;
+        if      (A[layer][i] >= 0.5  &&  output[i] == 1)   tp++;
+        else if (A[layer][i] >= 0.5  &&  output[i] == 0)   fp++;
+        else if (A[layer][i] < 0.5   &&  output[i] == 1)   fn++;
+        else if (A[layer][i] < 0.5   &&  output[i] == 0)   tn++;
     }
 
-    printf("TP = %u, TN = %u, FP = %u, FN = %u \n", tp, tn, fp, fn);
-    precision_out = precision(tp, fp);    // Precision
-    recall_out = recall(tp, fn);          // Recall
-    f1_out = f1(precision_out, recall_out);       // F1
-    printf("precision %f, recall %f, f1 %f\n", precision_out, recall_out, f1_out);
+    printf(" True Positives = %u, True Negatives = %u\n False Positives = %u, False Negatives = %u \n\n", tp, tn, fp, fn);
+    precision_out = precision(tp, fp);      // Precision
+    recall_out = recall(tp, fn);            // Recall
+    f1_out = f1(precision_out, recall_out); // F1
 
+    if (precision_out == FLT_MIN)
+        printf("Precision: --- \n");
+    else 
+        printf("Precision: %f \n", precision_out);
+
+    if (recall_out == FLT_MIN)
+        printf("Recall: --- \n");
+    else 
+        printf("Recall: %f \n", recall_out);
+    
+    if (f1_out == FLT_MIN)
+        printf("F-score: --- \n");
+    else 
+        printf("F-score: %f \n", f1_out);
 }
 
 
@@ -371,6 +386,9 @@ void export_nn(nn_t *nn, char *filename){
     double **BH_h = alloc_matrix_1v(nn->n_layers - 1, &(nn->layers_size[1]), init_zero);
     double **WH_h = alloc_matrix_2v(nn->n_layers - 1, &(nn->layers_size[1]),  &(nn->layers_size[0]), init_zero);
 
+    cuda_copyToHost(BH_h, nn->BH, (nn->n_layers - 1) * (nn->layers_size[1]) * sizeof(double));
+    cuda_copyToHost(WH_h, nn->WH, (nn->n_layers - 1) * (nn->layers_size[1]) * (nn->layers_size[0]) * sizeof(double));
+
     for (i = 0; i < nn->n_layers - 1; i++) {
         for (j = 0; j < nn->layers_size[i + 1]; j++) {
             fprintf(fd, "%lf ", BH_h[i][j]);
@@ -386,9 +404,6 @@ void export_nn(nn_t *nn, char *filename){
             fprintf(fd, "\n");
         }
     }
-
-    cuda_copyToDev(nn->BH, BH_h, (nn->n_layers - 1) * (nn->layers_size[1]) * sizeof(double));
-    cuda_copyToDev(nn->WH, WH_h, (nn->n_layers - 1) * (nn->layers_size[1]) * (nn->layers_size[0]) * sizeof(double));
 
     matrix_free_2D(BH_h, nn->n_layers - 1);
     matrix_free_2D(WH_h, nn->n_layers - 1);

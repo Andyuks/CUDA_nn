@@ -2,6 +2,8 @@
 #include "nn.h"
 #include "globals.h"
 
+#include <float.h>
+
 
 #ifdef CPU
 // #include <omp.h>
@@ -59,19 +61,22 @@ void forward_pass_test(nn_t *nn, double *input, double **A){
 // Common functions
 
 float precision(unsigned int tp, unsigned int fp){
-
-    float precision = tp/(tp+fp);
+    float precision = FLT_MIN;
+    if (tp + fp != 0)
+        precision = tp/(tp+fp);
     return(precision);
 }
 
 float recall(unsigned int tp, unsigned int fn){
-
-    float recall = tp/(tp+fn);
+    float recall = FLT_MIN;
+    if (tp + fn != 0)
+        recall = tp/(tp+fn);
     return(recall);
 }
 
 float f1(float p, float r){
-
-    float f1 = 2*((p*r)/(p+r));
+    float f1 = FLT_MIN;
+    if (p + r != 0)
+        f1 = 2*((p*r)/(p+r));
     return(f1);
 }

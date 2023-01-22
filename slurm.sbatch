@@ -21,11 +21,12 @@
 # Select one partition
 #SBATCH --partition=EHP-PAR
 # #SBATCH --gpus-per-task=2
-# #SBATCH --gpus=2
+#SBATCH --gpus=1
 
 # If you are using arrays, specify the number of tasks in the array
 #SBATCH --array=1-1
 
 #cmd
 
-./bin/nn --train --learning_rate 0.01 --epochs 1 --batch_number 1000 --dataset datasets/CC_train.csv --layers 30,60,10,1 -s 1 --model model.m --verbose
+sleep 20
+#####./bin/nn --train --learning_rate 0.01 --epochs 1 --batch_number 1000 --dataset datasets/CC_train.csv --layers 30,60,10,1 -s 1 --model model.m --verbose
