@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include <math.h>
 #include <time.h>
+#include <omp.h>
+
 #include "ds.h"
 #include "nn.h"
 #include "nn_aux.h"
@@ -17,6 +19,7 @@
 
 #ifdef GPU
 #include "matrix_gpu.cuh"
+#include "cuda_aux.cuh"
 #endif
 
 void init_nn(nn_t *nn, int n_layers, int *layers_size) {
@@ -149,10 +152,10 @@ void train(nn_t *nn, ds_t *ds, int epochs, int size_batch, double lr) {
     n_batches = ds->n_samples / size_batch;
     //int batch_sample_blks = ceil( (float)n_batches / thr_per_blk );
 
-
     for(i = 0; i < ds->n_samples; i++)
         order[i] = i;
-    
+
+
     for (n=0; n < epochs; n++) {
             
         if(verbose)
@@ -163,9 +166,9 @@ void train(nn_t *nn, ds_t *ds, int epochs, int size_batch, double lr) {
 
         clock_gettime(clk_id, &t1);
 
-        #pragma omp parallel private (x, min_batch, i) shared (A, Z, D, d) reduction (+:loss)
-        {
-            #pragma omp for schedule (static)
+
+        
+        //#pragma omp parallel for private (x, min_batch, i) shared (A, Z, D, d) reduction (+:loss) schedule (static)
             for (x = 0; x < n_batches; x++) {
                 for(min_batch = (x * size_batch); min_batch < ((x + 1) * size_batch); min_batch++){
                 
@@ -173,14 +176,12 @@ void train(nn_t *nn, ds_t *ds, int epochs, int size_batch, double lr) {
                     forward_pass(nn, &ds->inputs[i * ds->n_inputs], A, Z); 
                     loss += back_prop(nn, &ds->outputs[i * ds->n_outputs], A, Z, D, d);
                 }
-            }
-            #pragma omp barrier
-            #pragma omp master
-            {
                 update(nn, D, d, lr, size_batch);
+
             }
-        }
-    
+            
+        //update(nn, D, d, lr, size_batch);
+        
         // cuda_train_batch<<<batch_sample_blks, thr_per_blk>>>(nn, ds, size_batch, lr, n_batches, order, loss, A, Z, D, d);
 
         clock_gettime(clk_id, &t2);
@@ -203,7 +204,7 @@ void test(nn_t *nn, ds_t *ds){
         forward_pass_test(nn, &ds->inputs[i * ds->n_inputs], A);
     }
 
-    result_management( &ds->outputs[(batches-1) * ds->n_outputs], A[(batches-1) * ds->n_outputs], nn->layers_size[nn->n_layers - 1]);
+    result_management( &ds->outputs[(nn->n_layers-1) * ds->n_outputs], A[(nn->n_layers-1) * ds->n_outputs], nn->layers_size[nn->n_layers - 1]);
 }
 
 #endif

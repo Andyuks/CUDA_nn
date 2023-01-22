@@ -33,10 +33,4 @@ void cuda_matrix_sigmoid(double *n, double *m, int m_rows, int m_cols);
 
 void cuda_matrix_dSigmoid(double *n, double *m, int m_rows, int m_cols);
 
-//
-
-void cuda_copyToDev(void* dst, const void* src, size_t count);
-
-void cuda_copyToHost(void* dst, const void* src, size_t count);
-
 #endif

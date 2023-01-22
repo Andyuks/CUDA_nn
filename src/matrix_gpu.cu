@@ -122,7 +122,7 @@ void cuda_matrix_free_2D(double **m, int n_layers){
             cudaFree(m[i]);
         }
     }
-    cudaFree(m);
+    free(m);
 }
 
 void cuda_matrix_free(double *m){
@@ -131,14 +131,6 @@ void cuda_matrix_free(double *m){
         cudaFree(m);
 }
 
-
-void cuda_copyToDev(void *dst, const void *src, size_t count){
-    cudaMemcpy(dst, src, count, cudaMemcpyHostToDevice);
-}
-
-void cuda_copyToHost(void* dst, const void* src, size_t count){
-    cudaMemcpy(dst, src, count, cudaMemcpyDeviceToHost);
-}
 
 /* operations */ 
 
