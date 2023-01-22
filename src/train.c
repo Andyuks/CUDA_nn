@@ -91,6 +91,7 @@ void update(nn_t *nn, double **D, double **d, double lr, int batch_size){
 //////////////////////////////////////////////////////////////////////////////////////////
 
 #ifdef GPU
+#include <stdlib.h>
 #include "matrix_gpu.cuh"
 
 void forward_pass(nn_t *nn, double *input, double **A, double **Z) {
@@ -125,9 +126,19 @@ double back_prop(nn_t *nn, double *output, double **A, double **Z, double **D, d
 	D_aux = cuda_alloc_matrix_2v(n_l - 1, &(l_s[1]), &(l_s[0]), init_zero);
 	E =  cuda_alloc_matrix_1v(n_l - 1, &(l_s[1]), init_zero);
 
-    loss = nn->loss(A[n_l - 1], output, l_s[n_l - 1]);
+    double *A_h = (double *) malloc(l_s[n_l - 1] * sizeof(double));
 
-    cuda_matrix_sub(E[n_l - 2], A[n_l - 1], output, l_s[n_l - 1], 1);
+    cuda_copyToHost(A_h, A[n_l - 1], l_s[n_l - 1] * sizeof(double));
+    loss = nn->loss(A_h, output, l_s[n_l - 1]);
+    cuda_copyToDev(A[n_l - 1], A_h, l_s[n_l - 1] * sizeof(double));
+    free(A_h);
+
+    double *output_d = cuda_alloc_matrix(l_s[n_l - 1], 1);
+
+    cuda_copyToDev(output_d, output, l_s[n_l - 1] * sizeof(double));
+    cuda_matrix_sub(E[n_l - 2], A[n_l - 1], output_d, l_s[n_l - 1], 1);
+    cuda_matrix_free(output_d);
+
     cuda_matrix_mul_dot(E[n_l - 2], E[n_l - 2], Z[n_l - 1], l_s[n_l - 1], 1);
     
     T = cuda_matrix_transpose(A[n_l - 2], l_s[n_l - 2], 1);

@@ -98,7 +98,6 @@ double init_zero(){
 /* 
  * Loss functions 
  */
-
 double mse(double *a, double *output, int length){
 
     int i;
@@ -112,6 +111,7 @@ double mse(double *a, double *output, int length){
     return(cost);
 
 }
+
 
 double dmse(double *a, double *output, int length){
 

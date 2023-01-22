@@ -81,7 +81,7 @@ void train(nn_t *nn, ds_t *ds, int epochs, int size_batch, double lr){
 
         clock_gettime(clk_id, &t1);
 
-        #pragma omp parallel private (x, min_batch, i) firstprivate (A, Z, D, d) reduction (+:loss)
+        #pragma omp parallel private (x, min_batch, i) shared (A, Z, D, d) reduction (+:loss)
         {
             #pragma omp for schedule (static)
             for (x = 0; x < n_batches; x++) {
@@ -163,7 +163,7 @@ void train(nn_t *nn, ds_t *ds, int epochs, int size_batch, double lr) {
 
         clock_gettime(clk_id, &t1);
 
-        #pragma omp parallel private (x, min_batch, i) firstprivate (A, Z, D, d) reduction (+:loss)
+        #pragma omp parallel private (x, min_batch, i) shared (A, Z, D, d) reduction (+:loss)
         {
             #pragma omp for schedule (static)
             for (x = 0; x < n_batches; x++) {

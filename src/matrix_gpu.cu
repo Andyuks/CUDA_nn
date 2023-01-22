@@ -132,7 +132,7 @@ void cuda_matrix_free(double *m){
 }
 
 
-void cuda_copyToDev(void* dst, const void* src, size_t count){
+void cuda_copyToDev(void *dst, const void *src, size_t count){
     cudaMemcpy(dst, src, count, cudaMemcpyHostToDevice);
 }
 
